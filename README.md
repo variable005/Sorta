@@ -40,24 +40,3 @@ SORTA intercepts all of this locally on your Mac. You copy once, hit Option + Sp
 2. Press Option + Space (or click the scissors icon in your menu bar) to reveal the SORTA overlay panel.
 3. Press 1, 2, 3, or 4 on your keyboard to transform and paste immediately into your focused text cursor.
 
----
-
-## Building from Source
-
-Requirements:
-- macOS 14.0 or later
-- Swift 5.9 or later
-
-Clone the repository and build:
-
-```bash
-git clone https://github.com/variable005/Sorta.git
-cd Sorta
-swift run
-```
-
----
-
-## License
-
-MIT License.
