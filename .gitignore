@@ -1,0 +1,19 @@
+# SwiftPM & Xcode
+.build/
+Packages/
+*.xcodeproj
+*.xcworkspace
+.swiftpm/
+DerivedData/
+
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# User specific
+*.userstate
+*.xcuserdata
