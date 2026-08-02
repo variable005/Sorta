@@ -2,6 +2,7 @@ import SwiftUI
 
 public struct SortaHUDView: View {
     @ObservedObject var watcher: PasteboardWatcher
+    @ObservedObject var queueManager = QueueManager.shared
 
     public init(watcher: PasteboardWatcher) {
         self.watcher = watcher
@@ -21,6 +22,16 @@ public struct SortaHUDView: View {
 
                 Spacer()
 
+                if queueManager.isQueueModeEnabled {
+                    Text("QUEUE STACK (\(queueManager.queueStack.count))")
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(Color.orange.opacity(0.2))
+                        .foregroundColor(.orange)
+                        .cornerRadius(4)
+                }
+
                 Text("SORTA")
                     .font(.system(size: 10, weight: .black, design: .monospaced))
                     .padding(.horizontal, 6)
@@ -36,6 +47,44 @@ public struct SortaHUDView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
+                    // Queue Banner if Queue items exist
+                    if queueManager.isQueueModeEnabled && !queueManager.queueStack.isEmpty {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("SEQUENTIAL QUEUE STACK")
+                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                    .foregroundColor(.orange)
+
+                                Spacer()
+
+                                Button("Clear Queue") {
+                                    queueManager.clearQueue()
+                                }
+                                .buttonStyle(.plain)
+                                .font(.system(size: 10))
+                                .foregroundColor(.secondary)
+                            }
+
+                            ForEach(Array(queueManager.queueStack.enumerated()), id: \.offset) { idx, item in
+                                HStack {
+                                    Text("\(idx + 1)")
+                                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                        .foregroundColor(.orange)
+                                        .frame(width: 16)
+
+                                    Text(item)
+                                        .font(.system(size: 11, design: .monospaced))
+                                        .lineLimit(1)
+                                        .foregroundColor(.primary)
+                                }
+                                .padding(6)
+                                .background(Color.orange.opacity(0.06))
+                                .cornerRadius(4)
+                            }
+                        }
+                        Divider()
+                    }
+
                     // Current Item Preview Section
                     if let item = watcher.currentItem {
                         VStack(alignment: .leading, spacing: 8) {

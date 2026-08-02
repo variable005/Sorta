@@ -7,6 +7,11 @@ public enum ClipCategory: String, Codable, CaseIterable, Identifiable {
     case color = "Color"
     case timestamp = "Timestamp"
     case jwt = "JWT Token"
+    case markdownTable = "Markdown Table"
+    case base64 = "Base64"
+    case htmlEntity = "HTML Entity"
+    case sql = "SQL Query"
+    case regex = "Regex"
     case text = "Plain Text"
 
     public var id: String { rawValue }
@@ -19,6 +24,11 @@ public enum ClipCategory: String, Codable, CaseIterable, Identifiable {
         case .color: return "paintpalette"
         case .timestamp: return "clock"
         case .jwt: return "key"
+        case .markdownTable: return "tablecells"
+        case .base64: return "lock.rectangle"
+        case .htmlEntity: return "chevron.left.slash.chevron.right"
+        case .sql: return "database"
+        case .regex: return "asterisk"
         case .text: return "doc.text"
         }
     }

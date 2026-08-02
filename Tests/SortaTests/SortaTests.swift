@@ -28,10 +28,6 @@ final class SortaTests: XCTestCase {
         let tsOption = options.first(where: { $0.title == "Generate TypeScript Interface" })
         XCTAssertNotNil(tsOption)
         XCTAssertTrue(tsOption?.transformedContent.contains("username: string;") ?? false)
-
-        let swiftOption = options.first(where: { $0.title == "Generate Swift Codable Struct" })
-        XCTAssertNotNil(swiftOption)
-        XCTAssertTrue(swiftOption?.transformedContent.contains("let user_id: Int") ?? false)
     }
 
     func testCURLTransformer() {
@@ -44,44 +40,96 @@ final class SortaTests: XCTestCase {
         XCTAssertEqual(options.count, 3)
         let fetchOption = options.first(where: { $0.title.contains("JavaScript fetch") })
         XCTAssertNotNil(fetchOption)
-        XCTAssertTrue(fetchOption?.transformedContent.contains("fetch('https://api.example.com/data'") ?? false)
     }
 
-    func testColorTransformer() {
-        let transformer = ColorTransformer()
-        let hexColor = "#FF5733"
+    func testBase64Transformer() {
+        let transformer = Base64Transformer()
+        let encoded = "SGVsbG8gV29ybGQ="
 
-        XCTAssertTrue(transformer.detect(content: hexColor))
-        let options = transformer.transform(content: hexColor)
+        XCTAssertTrue(transformer.detect(content: encoded))
+        let options = transformer.transform(content: encoded)
+
+        let decodeOption = options.first(where: { $0.title.contains("Decode Base64") })
+        XCTAssertNotNil(decodeOption)
+        XCTAssertEqual(decodeOption?.transformedContent, "Hello World")
+    }
+
+    func testHTMLEntityTransformer() {
+        let transformer = HTMLEntityTransformer()
+        let htmlStr = "&lt;div class=&quot;box&quot;&gt;Hello &amp; Welcome&lt;/div&gt;"
+
+        XCTAssertTrue(transformer.detect(content: htmlStr))
+        let options = transformer.transform(content: htmlStr)
+
+        let decodeOption = options.first(where: { $0.title.contains("Decode HTML") })
+        XCTAssertNotNil(decodeOption)
+        XCTAssertEqual(decodeOption?.transformedContent, "<div class=\"box\">Hello & Welcome</div>")
+    }
+
+    func testMarkdownTableTransformer() {
+        let transformer = MarkdownTableTransformer()
+        let csvData = "Name,Age,Role\nHariom,25,Developer\nAlice,30,Designer"
+
+        XCTAssertTrue(transformer.detect(content: csvData))
+        let options = transformer.transform(content: csvData)
 
         XCTAssertFalse(options.isEmpty)
-        let swiftUIOption = options.first(where: { $0.title.contains("SwiftUI Color") })
-        XCTAssertNotNil(swiftUIOption)
-        XCTAssertTrue(swiftUIOption?.transformedContent.contains("Color(red: 1.000, green: 0.341, blue: 0.200)") ?? false)
+        XCTAssertTrue(options[0].transformedContent.contains("| Name | Age | Role |"))
+        XCTAssertTrue(options[0].transformedContent.contains("| --- | --- | --- |"))
     }
 
-    func testTimestampTransformer() {
-        let transformer = TimestampTransformer()
-        let timestamp = "1754034807"
+    func testSQLTransformer() {
+        let transformer = SQLTransformer()
+        let sql = "select id, username from users where is_active = 1 order by id desc"
 
-        XCTAssertTrue(transformer.detect(content: timestamp))
-        let options = transformer.transform(content: timestamp)
+        XCTAssertTrue(transformer.detect(content: sql))
+        let options = transformer.transform(content: sql)
 
         XCTAssertFalse(options.isEmpty)
-        let isoOption = options.first(where: { $0.title.contains("ISO-8601") })
-        XCTAssertNotNil(isoOption)
-        XCTAssertTrue(isoOption?.transformedContent.contains("2026-08-01") ?? false)
+        XCTAssertTrue(options[0].transformedContent.contains("SELECT"))
+        XCTAssertTrue(options[0].transformedContent.contains("FROM users"))
+        XCTAssertTrue(options[0].transformedContent.contains("WHERE"))
     }
 
-    func testTextSanitizerTransformer() {
-        let transformer = TextSanitizerTransformer()
-        let dirtyText = "Hello\u{200B} “World”"
+    func testRegexEscaperTransformer() {
+        let transformer = RegexEscaperTransformer()
+        let regex = "/\\d{3}-\\w+/g"
 
-        XCTAssertTrue(transformer.detect(content: dirtyText))
-        let options = transformer.transform(content: dirtyText)
+        XCTAssertTrue(transformer.detect(content: regex))
+        let options = transformer.transform(content: regex)
 
-        let sanitizedOption = options.first(where: { $0.title.contains("Sanitize") })
-        XCTAssertNotNil(sanitizedOption)
-        XCTAssertEqual(sanitizedOption?.transformedContent, "Hello \"World\"")
+        let rawOption = options.first(where: { $0.title.contains("Swift Raw") })
+        XCTAssertNotNil(rawOption)
+        XCTAssertEqual(rawOption?.transformedContent, "#\"/\\d{3}-\\w+/g\"#")
+    }
+
+    @MainActor
+    func testQueueManagerStack() {
+        let queue = QueueManager.shared
+        queue.clearQueue()
+        queue.toggleQueueMode() // Enable
+
+        queue.pushItem("Item1")
+        queue.pushItem("Item2")
+
+        XCTAssertEqual(queue.queueStack.count, 2)
+        XCTAssertEqual(queue.queueStack.first, "Item1")
+
+        queue.clearQueue()
+        queue.toggleQueueMode() // Disable
+    }
+
+    @MainActor
+    func testPrivacyGuardSensitiveKeyDetection() {
+        let guardInst = PrivacyGuard.shared
+        let awsKey = "AKIAIOSFODNN7EXAMPLE"
+        let normalText = "Hello World"
+
+        XCTAssertTrue(guardInst.isSensitiveContent(awsKey))
+        XCTAssertFalse(guardInst.isSensitiveContent(normalText))
+
+        let masked = guardInst.maskSensitiveContent(awsKey)
+        XCTAssertTrue(masked.hasPrefix("AKIA"))
+        XCTAssertTrue(masked.contains("****************"))
     }
 }

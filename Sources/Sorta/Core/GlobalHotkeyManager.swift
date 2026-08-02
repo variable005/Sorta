@@ -10,24 +10,56 @@ public final class GlobalHotkeyManager {
 
     public init() {}
 
-    public func registerHotkey(onTrigger: @escaping () -> Void) {
-        // Monitor global key presses (Cmd + Shift + V or Option + Space)
+    public func registerHotkey(onTriggerPanel: @escaping () -> Void) {
         globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { event in
-            // Option + Space
-            if event.modifierFlags.contains(.option) && event.keyCode == 49 {
+            let modifiers = event.modifierFlags
+
+            // Option + Space (keyCode 49) -> Toggle Panel
+            if modifiers.contains(.option) && !modifiers.contains(.shift) && event.keyCode == 49 {
                 Task { @MainActor in
-                    onTrigger()
+                    onTriggerPanel()
+                }
+            }
+
+            // Option + Shift + C (keyCode 8) -> Toggle Queue Mode
+            if modifiers.contains(.option) && modifiers.contains(.shift) && event.keyCode == 8 {
+                Task { @MainActor in
+                    QueueManager.shared.toggleQueueMode()
+                }
+            }
+
+            // Option + Shift + V (keyCode 9) -> Pop and paste next queue item
+            if modifiers.contains(.option) && modifiers.contains(.shift) && event.keyCode == 9 {
+                Task { @MainActor in
+                    _ = QueueManager.shared.popAndPaste()
                 }
             }
         }
 
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            if event.modifierFlags.contains(.option) && event.keyCode == 49 {
+            let modifiers = event.modifierFlags
+
+            if modifiers.contains(.option) && !modifiers.contains(.shift) && event.keyCode == 49 {
                 Task { @MainActor in
-                    onTrigger()
+                    onTriggerPanel()
                 }
                 return nil
             }
+
+            if modifiers.contains(.option) && modifiers.contains(.shift) && event.keyCode == 8 {
+                Task { @MainActor in
+                    QueueManager.shared.toggleQueueMode()
+                }
+                return nil
+            }
+
+            if modifiers.contains(.option) && modifiers.contains(.shift) && event.keyCode == 9 {
+                Task { @MainActor in
+                    _ = QueueManager.shared.popAndPaste()
+                }
+                return nil
+            }
+
             return event
         }
     }

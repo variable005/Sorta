@@ -36,14 +36,34 @@ public final class PasteboardWatcher: ObservableObject {
         guard pasteboard.changeCount != lastChangeCount else { return }
         lastChangeCount = pasteboard.changeCount
 
+        // 1. App Exclusion Check (Ignore 1Password, Bitwarden, Keychain, KeePass)
+        if PrivacyGuard.shared.isFromIgnoredApplication() {
+            return
+        }
+
         guard let newString = pasteboard.string(forType: .string), !newString.isEmpty else {
             return
+        }
+
+        // 2. Queue Mode Handling
+        if QueueManager.shared.isQueueModeEnabled {
+            QueueManager.shared.pushItem(newString)
+        }
+
+        // 3. Sensitive Data Check (Mask in history & auto-expire in 30 seconds)
+        let isSensitive = PrivacyGuard.shared.isSensitiveContent(newString)
+        let displayContent = isSensitive ? PrivacyGuard.shared.maskSensitiveContent(newString) : newString
+
+        if isSensitive {
+            PrivacyGuard.shared.scheduleAutoExpiry(seconds: 30.0) { [weak self] in
+                self?.currentItem = nil
+            }
         }
 
         let (category, options) = TransformerRegistry.shared.inspect(content: newString)
 
         let newItem = ClipItem(
-            rawContent: newString,
+            rawContent: displayContent,
             category: category,
             createdAt: Date()
         )
@@ -52,7 +72,7 @@ public final class PasteboardWatcher: ObservableObject {
         self.currentCategory = category
         self.currentOptions = options
 
-        if history.first?.rawContent != newString {
+        if history.first?.rawContent != displayContent {
             history.insert(newItem, at: 0)
             if history.count > 50 {
                 history.removeLast()

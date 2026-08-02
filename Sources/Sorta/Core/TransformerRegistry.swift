@@ -8,6 +8,11 @@ public final class TransformerRegistry {
     public init(transformers: [TransformerProtocol] = [
         JSONTransformer(),
         CURLTransformer(),
+        SQLTransformer(),
+        MarkdownTableTransformer(),
+        Base64Transformer(),
+        HTMLEntityTransformer(),
+        RegexEscaperTransformer(),
         URLCleanerTransformer(),
         ColorTransformer(),
         TimestampTransformer(),
@@ -19,9 +24,6 @@ public final class TransformerRegistry {
 
     public func inspect(content: String) -> (category: ClipCategory, options: [TransformOption]) {
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
-            return (.text, [])
-        }
 
         for transformer in transformers {
             if transformer.detect(content: trimmed) {
