@@ -1,64 +1,100 @@
 # SORTA
 
-Your macOS clipboard is currently a passive memory buffer storing random strings, malformed tracking links, sensitive API keys, and unformatted JSON until you paste them somewhere embarrassing.
+> **Smart, instant, zero-click macOS clipboard transformations.**
 
-SORTA fixes that.
-
-SORTA is an offline native macOS menu bar and HUD application built with Swift, SwiftUI, and AppKit. It inspects whatever you copy in real-time and offers zero-click, one-key transformations before you paste it anywhere.
+SORTA transforms your macOS clipboard from a passive string buffer into an intelligent developer workspace. Built natively for macOS using Swift, SwiftUI, and AppKit, SORTA runs silently in your menu bar, inspects copied text in real time, and provides single-keystroke transformations before you paste.
 
 ---
 
-## Why SORTA Exists
+## ⚡ Why SORTA?
 
-Every developer on the planet repeats the same exhausting ritual ten times a day:
+Developers spend hours every day performing repetitive clipboard micro-tasks:
 
-1. You copy a link from a friend or browser, and it comes with fifty tracking parameters attached (utm_source=twitter&utm_medium=social&si=987654321).
-2. You copy a cURL command from your network tab, open a web browser, search for "curl to fetch converter", paste it into an unverified website, and copy the output back.
-3. You copy a CSV from a terminal or spreadsheet and spend three minutes formatting pipe characters for a GitHub Markdown table.
-4. You copy an AWS secret key or GitHub token by mistake, and it sits unencrypted in plain text in your clipboard history forever.
+1. **Unsanitized URLs**: Copying links laden with tracking telemetry (`utm_source`, `fbclid`, `si`, `gclid`).
+2. **Web Tool Roundtrips**: Navigating to unverified online converters just to format JSON, decode JWTs, or convert cURL commands.
+3. **Markdown Overhead**: Formatting raw CSV/TSV data into GitHub Markdown tables by hand.
+4. **Clipboard Security**: Leaving AWS keys, GitHub tokens, or private keys unencrypted in clipboard memory.
 
-SORTA intercepts all of this locally on your Mac. You copy once, hit Option + Space, press 1, and paste pristine output.
-
----
-
-## Features & Transformers
-
-- **Markdown Table Generator**: Converts CSV or tab-delimited text into formatted GitHub Markdown tables (`| Header |`).
-- **Base64 Data & Text Engine**: Encodes text to Base64 or decodes Base64 strings back to plain text.
-- **HTML Entity Encoder/Decoder**: Decodes `&lt;div&gt;` or encodes special characters to HTML entities.
-- **SQL Prettifier**: Formats raw SQL queries (`SELECT`, `JOIN`, `WHERE`) with uppercase keyword structure.
-- **Regex & String Escaper**: Escapes double-quotes and backslashes for JS, Python, and Swift string literals.
-- **Sequential Queue Mode**: Press Option + Shift + C to enable queue stacking. Copy multiple items in sequence, then hit Option + Shift + V to pop and paste them in order.
-- **Sensitive Data & Credential Guard**: Automatically detects AWS keys, GitHub tokens, and private keys, masks them in history, and auto-expires them from pasteboard memory after 30 seconds.
-- **Password Manager Exclusion**: Automatically ignores clipboard changes coming from 1Password, Bitwarden, KeePass, and Apple Keychain.
-- **URL Tracking Parameter Stripper**: Automatically strips tracking query parameters (utm_*, fbclid, si, ref, gclid).
-- **JSON Prettifier & Type Generator**: Formats messy JSON, minifies it, or generates TypeScript interfaces and Swift Codable structs on the fly.
-- **cURL Code Converter**: Converts raw cURL commands into JavaScript fetch(), Python requests, or Swift URLSession snippets.
-- **Color Converter**: Converts Hex colors (#FF5733) into SwiftUI Color, NSColor, RGB, or HSL values.
-- **Timestamp Decoder**: Converts UNIX timestamps into ISO-8601 strings and local relative time descriptions.
-- **100% Offline & Private**: Zero network calls, zero telemetry, zero analytics. Everything runs locally on your Mac.
+**SORTA solves all of this locally on your Mac.** Copy text, press `Option + Space`, hit `1`–`4`, and paste formatted output instantly.
 
 ---
 
-## Usage
+## ✨ Features & Transformers
 
-1. Copy any text, link, JSON, cURL, CSV, or hex color using Command + C.
-2. Press Option + Space (or click the scissors icon in your menu bar) to reveal the SORTA overlay panel.
-3. Press 1, 2, 3, or 4 on your keyboard to transform and paste immediately into your focused text cursor.
-4. Press Option + Shift + C to toggle Sequential Queue Stacking Mode. Press Option + Shift + V to pop and paste next item in stack.
+SORTA includes **12 specialized transformation engines** out of the box:
+
+| Category | Transformer | Features |
+| :--- | :--- | :--- |
+| **JSON** | **JSON Prettifier & Type Generator** | Pretty-print, minify JSON, or auto-generate TypeScript interfaces and Swift `Codable` structs on the fly. |
+| **cURL** | **cURL Code Converter** | Converts raw cURL CLI commands into executable JavaScript `fetch()`, Python `requests`, or Swift `URLSession` snippets. |
+| **SQL** | **SQL Prettifier** | Formats raw SQL queries (`SELECT`, `FROM`, `WHERE`, `JOIN`) into clean, uppercase structured syntax. |
+| **Markdown** | **Markdown Table Generator** | Transforms raw CSV or tab-delimited text into formatted GitHub Flavored Markdown tables. |
+| **JWT** | **JWT Decoder & Inspector** | Automatically detects JWT tokens and decodes Header and Payload contents into formatted JSON objects. |
+| **Security** | **Text Sanitizer & Case Tools** | Strips zero-width space characters, normalizes smart quotes, flattens text into single line, and converts case (UPPERCASE, lowercase, Title Case). |
+| **URLs** | **URL Parameter Cleaner** | Strips tracking query parameters (`utm_*`, `fbclid`, `gclid`, `si`, `ref`) while preserving clean links. |
+| **Base64** | **Base64 Data Engine** | Encodes plain text to Base64 or decodes valid Base64 strings back to UTF-8 text. |
+| **HTML** | **HTML Entity Engine** | Decodes HTML entities (`&lt;div&gt;`) to plain text or encodes special characters to HTML entities. |
+| **Regex** | **Regex & String Escaper** | Escapes double-quotes and backslashes for safe inclusion in JS, Python, and Swift string literals. |
+| **Color** | **Color Converter** | Converts Hex hex codes (`#FF5733`) into SwiftUI `Color`, NSColor, RGB, or HSL values. |
+| **Time** | **Timestamp Decoder** | Converts UNIX epoch timestamps (seconds/ms) into ISO-8601 strings and human-readable relative time. |
 
 ---
 
-## Building from Source
+## 🔒 Privacy & Credential Guard
 
-Requirements:
-- macOS 14.0 or later
-- Swift 5.9 or later
+SORTA is built offline-first with security as a core primitive:
 
-Clone the repository and build:
+- **100% Local & Offline**: Zero network calls, zero tracking, zero telemetry.
+- **Sensitive Credential Detection**: Automatically identifies AWS keys (`AKIA...`), GitHub PATs (`ghp_`, `github_pat_`), PEM Private Keys, and Stripe live keys (`sk_live_`).
+- **Auto-Masking**: Sensitive tokens are masked in clipboard previews (`AKIA****************`).
+- **Auto-Expiry**: Purges sensitive credentials from system clipboard memory after 30 seconds.
+- **Password Manager Exclusion**: Automatically ignores clipboard updates originating from **1Password**, **Bitwarden**, **KeePassXC**, and **Keychain Access**.
+
+---
+
+## 🔁 Sequential Queue Stacking Mode
+
+SORTA allows you to copy multiple snippets in sequence and paste them one by one:
+
+1. Press `Option + Shift + C` to enable **Queue Stacking Mode**.
+2. Copy multiple items from various sources using `Command + C`.
+3. Press `Option + Shift + V` to pop and paste each queued item in order into your active cursor.
+
+---
+
+## ⌨️ Global Shortcuts
+
+| Shortcut | Action |
+| :--- | :--- |
+| `Option + Space` | Toggle SORTA HUD Overlay |
+| `1`, `2`, `3`, `4` | Select transformation option & auto-paste into focused application |
+| `Option + Shift + C` | Toggle Sequential Queue Stacking Mode |
+| `Option + Shift + V` | Pop & paste next item from Sequential Queue |
+
+---
+
+## 🛠️ Building from Source
+
+### Requirements
+- **macOS**: 14.0 (Sonoma) or later
+- **Swift**: 5.9 or later / Xcode 15+
+
+### Build & Run
 
 ```bash
+# Clone the repository
 git clone https://github.com/variable005/Sorta.git
 cd Sorta
+
+# Build the project
+swift build
+
+# Run SORTA
 swift run
 ```
+
+---
+
+## 📜 License
+
+MIT License. Free and open-source software.
