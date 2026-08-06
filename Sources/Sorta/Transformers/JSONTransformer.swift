@@ -29,12 +29,12 @@ public struct JSONTransformer: TransformerProtocol {
         var options: [TransformOption] = []
         var index = 1
 
-        // 1. Prettify JSON
+        // 1. Prettify JSON (with sorted keys)
         if let prettyData = try? JSONSerialization.data(withJSONObject: jsonObject, options: [.prettyPrinted, .sortedKeys]),
            let prettyString = String(data: prettyData, encoding: .utf8) {
             options.append(TransformOption(
                 title: "Prettify JSON",
-                detail: "Formatted JSON with 2-space indentation",
+                detail: "Formatted JSON with 2-space indentation and sorted keys",
                 shortcutKey: "\(index)",
                 transformedContent: prettyString
             ))
@@ -53,8 +53,26 @@ public struct JSONTransformer: TransformerProtocol {
             index += 1
         }
 
-        // 3. TypeScript Interface
-        if let dict = jsonObject as? [String: Any] {
+        // Extract dictionary or merge array of dictionaries for type generation
+        let dictionaryRepresentation: [String: Any]? = {
+            if let dict = jsonObject as? [String: Any] {
+                return dict
+            } else if let array = jsonObject as? [[String: Any]], !array.isEmpty {
+                var merged: [String: Any] = [:]
+                for item in array {
+                    for (k, v) in item {
+                        if merged[k] == nil {
+                            merged[k] = v
+                        }
+                    }
+                }
+                return merged
+            }
+            return nil
+        }()
+
+        if let dict = dictionaryRepresentation {
+            // 3. TypeScript Interface with sorted keys
             let tsInterface = generateTypeScriptType(from: dict, name: "GeneratedType")
             options.append(TransformOption(
                 title: "Generate TypeScript Interface",
@@ -64,7 +82,7 @@ public struct JSONTransformer: TransformerProtocol {
             ))
             index += 1
 
-            // 4. Swift Codable Struct
+            // 4. Swift Codable Struct with sorted keys
             let swiftStruct = generateSwiftStruct(from: dict, name: "GeneratedItem")
             options.append(TransformOption(
                 title: "Generate Swift Codable Struct",
@@ -80,9 +98,12 @@ public struct JSONTransformer: TransformerProtocol {
 
     private func generateTypeScriptType(from dict: [String: Any], name: String) -> String {
         var lines = ["interface \(name) {"]
-        for (key, value) in dict.sorted(by: { $0.key < $1.key }) {
-            let typeName = typeNameForTS(value)
-            lines.append("  \(key): \(typeName);")
+        let sortedKeys = dict.keys.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+        for key in sortedKeys {
+            if let value = dict[key] {
+                let typeName = typeNameForTS(value)
+                lines.append("  \(key): \(typeName);")
+            }
         }
         lines.append("}")
         return lines.joined(separator: "\n")
@@ -101,9 +122,12 @@ public struct JSONTransformer: TransformerProtocol {
 
     private func generateSwiftStruct(from dict: [String: Any], name: String) -> String {
         var lines = ["struct \(name): Codable {"]
-        for (key, value) in dict.sorted(by: { $0.key < $1.key }) {
-            let typeName = typeNameForSwift(value)
-            lines.append("    let \(key): \(typeName)")
+        let sortedKeys = dict.keys.sorted { $0.localizedStandardCompare($1) == .orderedAscending }
+        for key in sortedKeys {
+            if let value = dict[key] {
+                let typeName = typeNameForSwift(value)
+                lines.append("    let \(key): \(typeName)")
+            }
         }
         lines.append("}")
         return lines.joined(separator: "\n")

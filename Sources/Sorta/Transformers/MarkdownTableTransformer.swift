@@ -9,11 +9,10 @@ public struct MarkdownTableTransformer: TransformerProtocol {
         let lines = content.components(separatedBy: .newlines).filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
         guard lines.count >= 2 else { return false }
 
-        let firstLineCommas = lines[0].split(separator: ",").count
-        let firstLineTabs = lines[0].split(separator: "\t").count
+        let firstRow = parseCSVLine(lines[0], delimiter: lines[0].contains("\t") ? "\t" : ",")
+        let secondRow = parseCSVLine(lines[1], delimiter: lines[1].contains("\t") ? "\t" : ",")
 
-        return (firstLineCommas >= 2 && lines[1].split(separator: ",").count == firstLineCommas) ||
-               (firstLineTabs >= 2 && lines[1].split(separator: "\t").count == firstLineTabs)
+        return firstRow.count >= 2 && secondRow.count == firstRow.count
     }
 
     public func transform(content: String) -> [TransformOption] {
@@ -23,37 +22,77 @@ public struct MarkdownTableTransformer: TransformerProtocol {
         let isTabDelimited = lines[0].contains("\t")
         let delimiter: Character = isTabDelimited ? "\t" : ","
 
-        let matrix = lines.map { line in
-            line.split(separator: delimiter, omittingEmptySubsequences: false).map { String($0).trimmingCharacters(in: .whitespaces) }
-        }
-
+        let matrix = lines.map { parseCSVLine($0, delimiter: delimiter) }
         guard let columnCount = matrix.first?.count, columnCount >= 2 else { return [] }
 
-        var markdownRows: [String] = []
+        var options: [TransformOption] = []
+        var index = 1
+
+        // 1. Standard Markdown Table
+        let tableUnsorted = buildMarkdownTable(headerRow: matrix[0], dataRows: Array(matrix.dropFirst()), columnCount: columnCount)
+        options.append(TransformOption(
+            title: "Convert CSV/TSV to Markdown Table",
+            detail: "Formatted GitHub Markdown table grid",
+            shortcutKey: "\(index)",
+            transformedContent: tableUnsorted
+        ))
+        index += 1
+
+        // 2. Markdown Table with Sorted Rows (A-Z by Column 1)
+        let sortedDataRows = Array(matrix.dropFirst()).sorted { r1, r2 in
+            let col1 = r1.first ?? ""
+            let col2 = r2.first ?? ""
+            return col1.localizedStandardCompare(col2) == .orderedAscending
+        }
+        let tableSorted = buildMarkdownTable(headerRow: matrix[0], dataRows: sortedDataRows, columnCount: columnCount)
+        if tableSorted != tableUnsorted {
+            options.append(TransformOption(
+                title: "Convert & Sort Table Rows (A-Z)",
+                detail: "Markdown table with data rows sorted alphabetically by Column 1",
+                shortcutKey: "\(index)",
+                transformedContent: tableSorted
+            ))
+        }
+
+        return options
+    }
+
+    private func buildMarkdownTable(headerRow: [String], dataRows: [[String]], columnCount: Int) -> String {
+        var rows: [String] = []
 
         // Header Row
-        let header = "| " + matrix[0].joined(separator: " | ") + " |"
-        markdownRows.append(header)
+        let header = "| " + headerRow.joined(separator: " | ") + " |"
+        rows.append(header)
 
         // Separator Row
         let separator = "| " + Array(repeating: "---", count: columnCount).joined(separator: " | ") + " |"
-        markdownRows.append(separator)
+        rows.append(separator)
 
         // Data Rows
-        for row in matrix.dropFirst() {
+        for row in dataRows {
             let paddedRow = row + Array(repeating: "", count: max(0, columnCount - row.count))
-            markdownRows.append("| " + paddedRow.joined(separator: " | ") + " |")
+            rows.append("| " + paddedRow.joined(separator: " | ") + " |")
         }
 
-        let markdownTable = markdownRows.joined(separator: "\n")
+        return rows.joined(separator: "\n")
+    }
 
-        return [
-            TransformOption(
-                title: "Convert CSV/TSV to Markdown Table",
-                detail: "Formatted GitHub Markdown table grid",
-                shortcutKey: "1",
-                transformedContent: markdownTable
-            )
-        ]
+    private func parseCSVLine(_ line: String, delimiter: Character) -> [String] {
+        var fields: [String] = []
+        var current = ""
+        var insideQuotes = false
+
+        for char in line {
+            if char == "\"" {
+                insideQuotes.toggle()
+            } else if char == delimiter && !insideQuotes {
+                fields.append(current.trimmingCharacters(in: .whitespaces))
+                current = ""
+            } else {
+                current.append(char)
+            }
+        }
+        fields.append(current.trimmingCharacters(in: .whitespaces))
+        return fields.map { $0.trimmingCharacters(in: CharacterSet(charactersIn: "\"")) }
     }
 }

@@ -12,6 +12,7 @@ public enum ClipCategory: String, Codable, CaseIterable, Identifiable {
     case htmlEntity = "HTML Entity"
     case sql = "SQL Query"
     case regex = "Regex"
+    case sort = "Line & List Sorter"
     case text = "Plain Text"
 
     public var id: String { rawValue }
@@ -29,6 +30,7 @@ public enum ClipCategory: String, Codable, CaseIterable, Identifiable {
         case .htmlEntity: return "chevron.left.slash.chevron.right"
         case .sql: return "database"
         case .regex: return "asterisk"
+        case .sort: return "arrow.up.arrow.down"
         case .text: return "doc.text"
         }
     }

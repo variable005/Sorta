@@ -13,7 +13,9 @@ public struct URLCleanerTransformer: TransformerProtocol {
 
     public func detect(content: String) -> Bool {
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let url = URL(string: trimmed), let scheme = url.scheme, ["http", "https"].contains(scheme.lowercased()) else {
+        guard let components = getURLComponents(from: trimmed),
+              let scheme = components.scheme,
+              ["http", "https"].contains(scheme.lowercased()) else {
             return false
         }
         return true
@@ -21,15 +23,17 @@ public struct URLCleanerTransformer: TransformerProtocol {
 
     public func transform(content: String) -> [TransformOption] {
         let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard var components = URLComponents(string: trimmed) else { return [] }
+        guard var components = getURLComponents(from: trimmed) else { return [] }
 
         var options: [TransformOption] = []
         var index = 1
 
-        // 1. Cleaned URL
+        // 1. Clean Tracking Parameters & Sort Remaining Parameters
         if let queryItems = components.queryItems, !queryItems.isEmpty {
             let filteredItems = queryItems.filter { !trackingParameters.contains($0.name.lowercased()) }
-            components.queryItems = filteredItems.isEmpty ? nil : filteredItems
+            let sortedFiltered = sortQueryItems(filteredItems)
+            components.queryItems = sortedFiltered.isEmpty ? nil : sortedFiltered
+
             if let cleanURLString = components.url?.absoluteString, cleanURLString != trimmed {
                 options.append(TransformOption(
                     title: "Clean Tracking Parameters",
@@ -41,7 +45,23 @@ public struct URLCleanerTransformer: TransformerProtocol {
             }
         }
 
-        // 2. Decode URL Encoding
+        // 2. Sort Query Parameters (Canonical URL)
+        var sortComponents = getURLComponents(from: trimmed) ?? components
+        if let queryItems = sortComponents.queryItems, queryItems.count >= 2 {
+            let sortedItems = sortQueryItems(queryItems)
+            sortComponents.queryItems = sortedItems
+            if let sortedURLString = sortComponents.url?.absoluteString, sortedURLString != trimmed {
+                options.append(TransformOption(
+                    title: "Sort Query Parameters (Canonical URL)",
+                    detail: "Alphabetically sorts URL parameters",
+                    shortcutKey: "\(index)",
+                    transformedContent: sortedURLString
+                ))
+                index += 1
+            }
+        }
+
+        // 3. Decode URL Encoding
         if let decoded = trimmed.removingPercentEncoding, decoded != trimmed {
             options.append(TransformOption(
                 title: "Decode URL Encoding",
@@ -52,7 +72,7 @@ public struct URLCleanerTransformer: TransformerProtocol {
             index += 1
         }
 
-        // 3. Extract Host / Domain
+        // 4. Extract Host / Domain
         if let host = components.host {
             options.append(TransformOption(
                 title: "Extract Domain Host",
@@ -63,7 +83,7 @@ public struct URLCleanerTransformer: TransformerProtocol {
             index += 1
         }
 
-        // 4. Raw Copy
+        // 5. Raw Copy
         options.append(TransformOption(
             title: "Original URL",
             detail: trimmed,
@@ -72,5 +92,26 @@ public struct URLCleanerTransformer: TransformerProtocol {
         ))
 
         return options
+    }
+
+    private func getURLComponents(from string: String) -> URLComponents? {
+        if let comp = URLComponents(string: string) {
+            return comp
+        }
+        if let encoded = string.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) {
+            return URLComponents(string: encoded)
+        }
+        return nil
+    }
+
+    private func sortQueryItems(_ items: [URLQueryItem]) -> [URLQueryItem] {
+        return items.sorted { item1, item2 in
+            if item1.name != item2.name {
+                return item1.name.localizedStandardCompare(item2.name) == .orderedAscending
+            }
+            let val1 = item1.value ?? ""
+            let val2 = item2.value ?? ""
+            return val1.localizedStandardCompare(val2) == .orderedAscending
+        }
     }
 }

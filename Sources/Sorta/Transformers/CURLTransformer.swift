@@ -6,12 +6,17 @@ public struct CURLTransformer: TransformerProtocol {
     public init() {}
 
     public func detect(content: String) -> Bool {
-        let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = content
+            .replacingOccurrences(of: "\\\n", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.lowercased().hasPrefix("curl ")
     }
 
     public func transform(content: String) -> [TransformOption] {
-        let trimmed = content.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = content
+            .replacingOccurrences(of: "\\\n", with: " ")
+            .replacingOccurrences(of: "\\\r\n", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         let parsed = parseCURL(trimmed)
 
         var options: [TransformOption] = []
@@ -59,7 +64,7 @@ public struct CURLTransformer: TransformerProtocol {
     private func parseCURL(_ curlString: String) -> ParsedCURL {
         var parsed = ParsedCURL()
 
-        // Extract URL
+        // Extract URL and flags
         let tokens = curlString.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
         for (idx, token) in tokens.enumerated() {
             let cleanToken = token.trimmingCharacters(in: CharacterSet(charactersIn: "'\""))
@@ -83,10 +88,15 @@ public struct CURLTransformer: TransformerProtocol {
         return parsed
     }
 
+    private func sortedHeaderKeys(_ headers: [String: String]) -> [String] {
+        return headers.keys.sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+    }
+
     private func generateFetch(_ parsed: ParsedCURL) -> String {
         var opts: [String] = ["  method: '\(parsed.method)'"]
         if !parsed.headers.isEmpty {
-            let headerLines = parsed.headers.map { "    '\($0.key)': '\($0.value)'" }.joined(separator: ",\n")
+            let sortedKeys = sortedHeaderKeys(parsed.headers)
+            let headerLines = sortedKeys.map { key in "    '\(key)': '\(parsed.headers[key]!)'" }.joined(separator: ",\n")
             opts.append("  headers: {\n\(headerLines)\n  }")
         }
         if let body = parsed.body {
@@ -105,7 +115,8 @@ public struct CURLTransformer: TransformerProtocol {
         var lines = ["import requests", ""]
         lines.append("url = '\(parsed.url)'")
         if !parsed.headers.isEmpty {
-            let headerItems = parsed.headers.map { "    '\($0.key)': '\($0.value)'" }.joined(separator: ",\n")
+            let sortedKeys = sortedHeaderKeys(parsed.headers)
+            let headerItems = sortedKeys.map { key in "    '\(key)': '\(parsed.headers[key]!)'" }.joined(separator: ",\n")
             lines.append("headers = {\n\(headerItems)\n}")
         } else {
             lines.append("headers = {}")
@@ -124,11 +135,14 @@ public struct CURLTransformer: TransformerProtocol {
     }
 
     private func generateSwift(_ parsed: ParsedCURL) -> String {
+        let sortedKeys = sortedHeaderKeys(parsed.headers)
+        let headerLines = sortedKeys.map { key in "request.addValue(\"\(parsed.headers[key]!)\", forHTTPHeaderField: \"\(key)\")" }.joined(separator: "\n")
+
         return """
         guard let url = URL(string: "\(parsed.url)") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "\(parsed.method)"
-        \(parsed.headers.map { "request.addValue(\"\($0.value)\", forHTTPHeaderField: \"\($0.key)\")" }.joined(separator: "\n"))
+        \(headerLines)
         \(parsed.body != nil ? "request.httpBody = \"\(parsed.body!)\".data(using: .utf8)" : "")
 
         let (data, response) = try await URLSession.shared.data(for: request)

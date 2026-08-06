@@ -3,9 +3,40 @@ import XCTest
 
 final class SortaTests: XCTestCase {
 
+    func testLineSorterTransformer() {
+        let transformer = LineSorterTransformer()
+        let text = "item10\nitem2\nitem1\nitem2\nitem3"
+
+        XCTAssertTrue(transformer.detect(content: text))
+        let options = transformer.transform(content: text)
+        XCTAssertFalse(options.isEmpty)
+
+        // Natural sort A-Z (item1, item2, item2, item3, item10)
+        let azOption = options.first(where: { $0.title.contains("Sort Lines (A-Z Natural)") })
+        XCTAssertNotNil(azOption)
+        XCTAssertEqual(azOption?.transformedContent, "item1\nitem2\nitem2\nitem3\nitem10")
+
+        // Unique deduplicated sort (item1, item2, item3, item10)
+        let uniqueOption = options.first(where: { $0.title.contains("Unique A-Z") })
+        XCTAssertNotNil(uniqueOption)
+        XCTAssertEqual(uniqueOption?.transformedContent, "item1\nitem2\nitem3\nitem10")
+    }
+
+    func testLineSorterDelimitedList() {
+        let transformer = LineSorterTransformer()
+        let csvList = "banana, apple, cherry, date"
+
+        XCTAssertTrue(transformer.detect(content: csvList))
+        let options = transformer.transform(content: csvList)
+
+        let sortedOption = options.first(where: { $0.title.contains("Sort Delimited List") })
+        XCTAssertNotNil(sortedOption)
+        XCTAssertEqual(sortedOption?.transformedContent, "apple, banana, cherry, date")
+    }
+
     func testURLCleanerTransformer() {
         let transformer = URLCleanerTransformer()
-        let dirtyURL = "https://github.com/apple/swift?utm_source=twitter&utm_medium=social&si=12345"
+        let dirtyURL = "https://github.com/apple/swift?z_param=1&utm_source=twitter&a_param=2&si=12345"
 
         XCTAssertTrue(transformer.detect(content: dirtyURL))
         let options = transformer.transform(content: dirtyURL)
@@ -13,7 +44,7 @@ final class SortaTests: XCTestCase {
         XCTAssertFalse(options.isEmpty)
         let cleanOption = options.first(where: { $0.title == "Clean Tracking Parameters" })
         XCTAssertNotNil(cleanOption)
-        XCTAssertEqual(cleanOption?.transformedContent, "https://github.com/apple/swift")
+        XCTAssertEqual(cleanOption?.transformedContent, "https://github.com/apple/swift?a_param=2&z_param=1")
     }
 
     func testJSONTransformerPrettifyAndTypes() {
@@ -30,9 +61,22 @@ final class SortaTests: XCTestCase {
         XCTAssertTrue(tsOption?.transformedContent.contains("username: string;") ?? false)
     }
 
-    func testCURLTransformer() {
+    func testJSONTransformerArrayOfObjects() {
+        let transformer = JSONTransformer()
+        let arrayJSON = "[{\"id\":1, \"name\":\"Alice\"}, {\"age\":30, \"role\":\"Admin\"}]"
+
+        XCTAssertTrue(transformer.detect(content: arrayJSON))
+        let options = transformer.transform(content: arrayJSON)
+
+        let tsOption = options.first(where: { $0.title == "Generate TypeScript Interface" })
+        XCTAssertNotNil(tsOption)
+        XCTAssertTrue(tsOption?.transformedContent.contains("id: number;") ?? false)
+        XCTAssertTrue(tsOption?.transformedContent.contains("role: string;") ?? false)
+    }
+
+    func testCURLTransformerHeaderSorting() {
         let transformer = CURLTransformer()
-        let curlCmd = "curl -X POST https://api.example.com/data -H 'Content-Type: application/json' -d '{\"key\":\"val\"}'"
+        let curlCmd = "curl -X POST https://api.example.com/data -H 'Authorization: Bearer xyz' -H 'Accept: application/json' -d '{\"key\":\"val\"}'"
 
         XCTAssertTrue(transformer.detect(content: curlCmd))
         let options = transformer.transform(content: curlCmd)
@@ -40,6 +84,8 @@ final class SortaTests: XCTestCase {
         XCTAssertEqual(options.count, 3)
         let fetchOption = options.first(where: { $0.title.contains("JavaScript fetch") })
         XCTAssertNotNil(fetchOption)
+        // Check sorted headers order: Accept before Authorization
+        XCTAssertTrue(fetchOption?.transformedContent.contains("'Accept': 'application/json'") ?? false)
     }
 
     func testBase64Transformer() {
@@ -76,6 +122,10 @@ final class SortaTests: XCTestCase {
         XCTAssertFalse(options.isEmpty)
         XCTAssertTrue(options[0].transformedContent.contains("| Name | Age | Role |"))
         XCTAssertTrue(options[0].transformedContent.contains("| --- | --- | --- |"))
+
+        let sortedOption = options.first(where: { $0.title.contains("Sort Table Rows") })
+        XCTAssertNotNil(sortedOption)
+        XCTAssertTrue(sortedOption?.transformedContent.contains("| Alice | 30 | Designer |") ?? false)
     }
 
     func testSQLTransformer() {

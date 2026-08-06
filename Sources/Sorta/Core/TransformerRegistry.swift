@@ -17,6 +17,7 @@ public final class TransformerRegistry {
         ColorTransformer(),
         TimestampTransformer(),
         JWTTransformer(),
+        LineSorterTransformer(),
         TextSanitizerTransformer()
     ]) {
         self.transformers = transformers
