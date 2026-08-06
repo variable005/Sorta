@@ -10,32 +10,32 @@ SORTA transforms your macOS clipboard from a passive string buffer into an intel
 
 ---
 
-## 📌 Table of Contents
+## Table of Contents
 
-- [⚡ Why SORTA?](#-why-sorta)
-- [✨ Transformation Engines](#-transformation-engines)
-  - [🔀 Line & List Sorter](#-line--list-sorter)
-  - [📦 JSON Prettifier & Type Generator](#-json-prettifier--type-generator)
-  - [🔗 URL Parameter Cleaner & Canonicalizer](#-url-parameter-cleaner--canonicalizer)
-  - [💻 cURL Code Converter](#-curl-code-converter)
-  - [📊 Markdown Table Generator](#-markdown-table-generator)
-  - [🔒 JWT Decoder & Inspector](#-jwt-decoder--inspector)
-  - [🛢️ SQL Query Prettifier](#-sql-query-prettifier)
-  - [🧹 Text Sanitizer & Case Tools](#-text-sanitizer--case-tools)
-  - [🔐 Base64 Data Engine](#-base64-data-engine)
-  - [🌐 HTML Entity Engine](#-html-entity-engine)
-  - [🔣 Regex & String Escaper](#-regex--string-escaper)
-  - [🎨 Color Code Converter](#-color-code-converter)
-  - [⏰ Timestamp Decoder](#-timestamp-decoder)
-- [🔒 Privacy & Credential Guard](#-privacy--credential-guard)
-- [🔁 Sequential Queue Stacking Mode](#-sequential-queue-stacking-mode)
-- [⌨️ Global Shortcuts](#-global-shortcuts)
-- [🛠️ Building from Source](#%EF%B8%8F-building-from-source)
-- [📜 License](#-license)
+- [Why SORTA?](#why-sorta)
+- [Transformation Engines](#transformation-engines)
+  - [Line & List Sorter](#line--list-sorter)
+  - [JSON Prettifier & Type Generator](#json-prettifier--type-generator)
+  - [URL Parameter Cleaner & Canonicalizer](#url-parameter-cleaner--canonicalizer)
+  - [cURL Code Converter](#curl-code-converter)
+  - [Markdown Table Generator](#markdown-table-generator)
+  - [JWT Decoder & Inspector](#jwt-decoder--inspector)
+  - [SQL Query Prettifier](#sql-query-prettifier)
+  - [Text Sanitizer & Case Tools](#text-sanitizer--case-tools)
+  - [Base64 Data Engine](#base64-data-engine)
+  - [HTML Entity Engine](#html-entity-engine)
+  - [Regex & String Escaper](#regex--string-escaper)
+  - [Color Code Converter](#color-code-converter)
+  - [Timestamp Decoder](#timestamp-decoder)
+- [Privacy & Credential Guard](#privacy--credential-guard)
+- [Sequential Queue Stacking Mode](#sequential-queue-stacking-mode)
+- [Global Shortcuts](#global-shortcuts)
+- [Building from Source](#building-from-source)
+- [License](#license)
 
 ---
 
-## ⚡ Why SORTA?
+## Why SORTA?
 
 Developers spend hours every day performing repetitive clipboard micro-tasks:
 
@@ -49,29 +49,29 @@ Developers spend hours every day performing repetitive clipboard micro-tasks:
 
 ---
 
-## ✨ Transformation Engines
+## Transformation Engines
 
 SORTA includes **13 specialized transformation engines** out of the box:
 
 | Category | Transformer | Summary |
 | :--- | :--- | :--- |
-| **Sorting** | [**Line & List Sorter**](#-line--list-sorter) | Natural numerical line sorting (A-Z, Z-A), unique deduplication, line length sorting, numeric sorting, and inline list sorting. |
-| **JSON** | [**JSON Prettifier & Type Generator**](#-json-prettifier--type-generator) | Pretty-print, minify JSON, or auto-generate TypeScript interfaces and Swift `Codable` structs from objects or arrays. |
-| **URLs** | [**URL Parameter Cleaner & Canonicalizer**](#-url-parameter-cleaner--canonicalizer) | Strips tracking query parameters (`utm_*`, `fbclid`, `si`) and canonicalizes parameter order alphabetically. |
-| **cURL** | [**cURL Code Converter**](#-curl-code-converter) | Converts raw cURL CLI commands into executable JavaScript `fetch()`, Python `requests`, or Swift `URLSession` snippets with sorted headers. |
-| **Markdown** | [**Markdown Table Generator**](#-markdown-table-generator) | Transforms raw CSV (with quote handling) or tab-delimited text into formatted GitHub Markdown tables, with optional row sorting. |
-| **JWT** | [**JWT Decoder & Inspector**](#-jwt-decoder--inspector) | Automatically detects JWT tokens and decodes Header and Payload contents into formatted JSON objects. |
-| **SQL** | [**SQL Query Prettifier**](#-sql-query-prettifier) | Formats raw SQL queries (`SELECT`, `FROM`, `WHERE`, `JOIN`) into clean, uppercase structured syntax. |
-| **Security** | [**Text Sanitizer & Case Tools**](#-text-sanitizer--case-tools) | Strips zero-width space characters, normalizes smart quotes, flattens text into single line, and converts case. |
-| **Base64** | [**Base64 Data Engine**](#-base64-data-engine) | Encodes plain text to Base64 or decodes valid Base64 strings back to UTF-8 text. |
-| **HTML** | [**HTML Entity Engine**](#-html-entity-engine) | Decodes HTML entities (`&lt;div&gt;`) to plain text or encodes special characters to HTML entities. |
-| **Regex** | [**Regex & String Escaper**](#-regex--string-escaper) | Escapes double-quotes and backslashes for safe inclusion in JS, Python, and Swift string literals. |
-| **Color** | [**Color Code Converter**](#-color-code-converter) | Converts Hex codes (`#FF5733`) into SwiftUI `Color`, NSColor, RGB, or HSL values. |
-| **Time** | [**Timestamp Decoder**](#-timestamp-decoder) | Converts UNIX epoch timestamps (seconds/ms) into ISO-8601 strings and human-readable relative time. |
+| **Sorting** | [**Line & List Sorter**](#line--list-sorter) | Natural numerical line sorting (A-Z, Z-A), unique deduplication, line length sorting, numeric sorting, and inline list sorting. |
+| **JSON** | [**JSON Prettifier & Type Generator**](#json-prettifier--type-generator) | Pretty-print, minify JSON, or auto-generate TypeScript interfaces and Swift `Codable` structs from objects or arrays. |
+| **URLs** | [**URL Parameter Cleaner & Canonicalizer**](#url-parameter-cleaner--canonicalizer) | Strips tracking query parameters (`utm_*`, `fbclid`, `si`) and canonicalizes parameter order alphabetically. |
+| **cURL** | [**cURL Code Converter**](#curl-code-converter) | Converts raw cURL CLI commands into executable JavaScript `fetch()`, Python `requests`, or Swift `URLSession` snippets with sorted headers. |
+| **Markdown** | [**Markdown Table Generator**](#markdown-table-generator) | Transforms raw CSV (with quote handling) or tab-delimited text into formatted GitHub Markdown tables, with optional row sorting. |
+| **JWT** | [**JWT Decoder & Inspector**](#jwt-decoder--inspector) | Automatically detects JWT tokens and decodes Header and Payload contents into formatted JSON objects. |
+| **SQL** | [**SQL Query Prettifier**](#sql-query-prettifier) | Formats raw SQL queries (`SELECT`, `FROM`, `WHERE`, `JOIN`) into clean, uppercase structured syntax. |
+| **Security** | [**Text Sanitizer & Case Tools**](#text-sanitizer--case-tools) | Strips zero-width space characters, normalizes smart quotes, flattens text into single line, and converts case. |
+| **Base64** | [**Base64 Data Engine**](#base64-data-engine) | Encodes plain text to Base64 or decodes valid Base64 strings back to UTF-8 text. |
+| **HTML** | [**HTML Entity Engine**](#html-entity-engine) | Decodes HTML entities (`&lt;div&gt;`) to plain text or encodes special characters to HTML entities. |
+| **Regex** | [**Regex & String Escaper**](#regex--string-escaper) | Escapes double-quotes and backslashes for safe inclusion in JS, Python, and Swift string literals. |
+| **Color** | [**Color Code Converter**](#color-code-converter) | Converts Hex codes (`#FF5733`) into SwiftUI `Color`, NSColor, RGB, or HSL values. |
+| **Time** | [**Timestamp Decoder**](#timestamp-decoder) | Converts UNIX epoch timestamps (seconds/ms) into ISO-8601 strings and human-readable relative time. |
 
 ---
 
-### 🔀 Line & List Sorter
+### Line & List Sorter
 
 The **Line & List Sorter** transforms multi-line clipboard inputs and comma-separated inline lists with high-performance natural sorting:
 
@@ -85,7 +85,7 @@ The **Line & List Sorter** transforms multi-line clipboard inputs and comma-sepa
 
 ---
 
-### 📦 JSON Prettifier & Type Generator
+### JSON Prettifier & Type Generator
 
 - **Prettify JSON**: 2-space indented JSON formatting with sorted dictionary keys.
 - **Minify JSON**: Single line compact JSON representation.
@@ -94,7 +94,7 @@ The **Line & List Sorter** transforms multi-line clipboard inputs and comma-sepa
 
 ---
 
-### 🔗 URL Parameter Cleaner & Canonicalizer
+### URL Parameter Cleaner & Canonicalizer
 
 - **Clean Tracking Parameters**: Strips `utm_source`, `utm_medium`, `utm_campaign`, `fbclid`, `gclid`, `si`, `ref`, and other telemetry parameters while preserving path and query structure.
 - **Sort Query Parameters (Canonical URL)**: Alphabetically sorts URL query parameters for canonical query comparisons.
@@ -103,7 +103,7 @@ The **Line & List Sorter** transforms multi-line clipboard inputs and comma-sepa
 
 ---
 
-### 💻 cURL Code Converter
+### cURL Code Converter
 
 - **JavaScript `fetch()`**: Generates modern `async/await` fetch snippets with sorted headers.
 - **Python `requests`**: Generates idiomatic Python code with headers and payload dictionaries.
@@ -112,7 +112,7 @@ The **Line & List Sorter** transforms multi-line clipboard inputs and comma-sepa
 
 ---
 
-### 📊 Markdown Table Generator
+### Markdown Table Generator
 
 - **Convert CSV/TSV**: Parses comma and tab-delimited text into aligned GitHub Flavored Markdown tables.
 - **CSV Quote Support**: Accurately handles commas enclosed inside quotes (e.g. `"Doe, Jane", 28`).
@@ -120,7 +120,7 @@ The **Line & List Sorter** transforms multi-line clipboard inputs and comma-sepa
 
 ---
 
-## 🔒 Privacy & Credential Guard
+## Privacy & Credential Guard
 
 SORTA is built offline-first with security as a core primitive:
 
@@ -132,7 +132,7 @@ SORTA is built offline-first with security as a core primitive:
 
 ---
 
-## 🔁 Sequential Queue Stacking Mode
+## Sequential Queue Stacking Mode
 
 SORTA allows you to copy multiple snippets in sequence and paste them one by one:
 
@@ -142,7 +142,7 @@ SORTA allows you to copy multiple snippets in sequence and paste them one by one
 
 ---
 
-## ⌨️ Global Shortcuts
+## Global Shortcuts
 
 | Shortcut | Action |
 | :--- | :--- |
@@ -153,7 +153,7 @@ SORTA allows you to copy multiple snippets in sequence and paste them one by one
 
 ---
 
-## 🛠️ Building from Source
+## Building from Source
 
 ### Requirements
 - **macOS**: 14.0 (Sonoma) or later
@@ -175,6 +175,6 @@ swift run
 
 ---
 
-## 📜 License
+## License
 
 MIT License. Free and open-source software.
