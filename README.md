@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="Assets/sorta_banner.png" alt="SORTA Banner" width="100%" />
+  <img src="Assets/sorta.png" alt="SORTA Banner" width="100%" />
 </p>
 
 # SORTA
@@ -31,7 +31,6 @@ SORTA transforms your macOS clipboard from a passive string buffer into an intel
 - [Sequential Queue Stacking Mode](#sequential-queue-stacking-mode)
 - [Global Shortcuts](#global-shortcuts)
 - [Building from Source](#building-from-source)
-- [License](#license)
 
 ---
 
@@ -172,9 +171,3 @@ swift build
 # Run SORTA
 swift run
 ```
-
----
-
-## License
-
-MIT License. Free and open-source software.
