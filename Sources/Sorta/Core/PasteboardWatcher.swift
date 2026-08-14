@@ -9,6 +9,30 @@ public final class PasteboardWatcher: ObservableObject {
     @Published public private(set) var currentOptions: [TransformOption] = []
     @Published public private(set) var history: [ClipItem] = []
     @Published public var searchQuery: String = ""
+    @Published public var selectedCategory: ClipCategory? = nil
+    @Published public var isGroupedByCategory: Bool = false
+
+    public var categorizedHistory: [ClipCategory: [ClipItem]] {
+        Dictionary(grouping: history) { $0.category }
+    }
+
+    public var categoriesInHistory: [ClipCategory] {
+        let present = Set(history.map { $0.category })
+        return ClipCategory.allCases.filter { present.contains($0) }
+    }
+
+    public var filteredHistory: [ClipItem] {
+        history.filter { item in
+            let matchesCategory = selectedCategory == nil || item.category == selectedCategory
+            let matchesSearch = searchQuery.isEmpty || item.rawContent.localizedCaseInsensitiveContains(searchQuery)
+            return matchesCategory && matchesSearch
+        }
+    }
+
+    public func clearHistory() {
+        history.removeAll()
+    }
+
 
     private var lastChangeCount: Int = -1
     private var timer: Timer?

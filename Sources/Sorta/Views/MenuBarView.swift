@@ -23,7 +23,7 @@ public final class MenuBarManager: ObservableObject {
         buildMenu()
     }
 
-    private func buildMenu() {
+    public func buildMenu() {
         let menu = NSMenu()
 
         let toggleItem = NSMenuItem(
@@ -35,6 +35,35 @@ public final class MenuBarManager: ObservableObject {
         menu.addItem(toggleItem)
 
         menu.addItem(NSMenuItem.separator())
+
+        // Categorized History Submenu
+        if let watcher = watcher, !watcher.history.isEmpty {
+            let catMenuHeader = NSMenuItem(title: "Categorized History", action: nil, keyEquivalent: "")
+            let catSubmenu = NSMenu()
+
+            for cat in watcher.categoriesInHistory {
+                let items = watcher.history.filter { $0.category == cat }
+                if !items.isEmpty {
+                    let catItem = NSMenuItem(title: "\(cat.rawValue) (\(items.count))", action: nil, keyEquivalent: "")
+                    let catItemSubmenu = NSMenu()
+
+                    for clip in items.prefix(10) {
+                        let snippet = String(clip.rawContent.prefix(40)).replacingOccurrences(of: "\n", with: " ")
+                        let subMenuItem = NSMenuItem(title: snippet, action: #selector(copyHistorySnippet(_:)), keyEquivalent: "")
+                        subMenuItem.representedObject = clip.rawContent
+                        subMenuItem.target = self
+                        catItemSubmenu.addItem(subMenuItem)
+                    }
+
+                    catItem.submenu = catItemSubmenu
+                    catSubmenu.addItem(catItem)
+                }
+            }
+
+            catMenuHeader.submenu = catSubmenu
+            menu.addItem(catMenuHeader)
+            menu.addItem(NSMenuItem.separator())
+        }
 
         let clearItem = NSMenuItem(
             title: "Clear History",
@@ -57,6 +86,12 @@ public final class MenuBarManager: ObservableObject {
         statusItem?.menu = menu
     }
 
+    @objc private func copyHistorySnippet(_ sender: NSMenuItem) {
+        if let content = sender.representedObject as? String {
+            watcher?.copyToClipboard(content: content)
+        }
+    }
+
     @objc private func statusItemClicked() {
         PanelManager.shared.togglePanel()
     }
@@ -66,10 +101,12 @@ public final class MenuBarManager: ObservableObject {
     }
 
     @objc private func clearHistory() {
-        // Clear history in watcher
+        watcher?.clearHistory()
+        buildMenu()
     }
 
     @objc private func quitApp() {
         NSApplication.shared.terminate(nil)
     }
 }
+

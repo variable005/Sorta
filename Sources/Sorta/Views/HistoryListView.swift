@@ -1,42 +1,124 @@
 import SwiftUI
 
 public struct HistoryListView: View {
-    public let history: [ClipItem]
-    public let searchQuery: String
+    @ObservedObject var watcher: PasteboardWatcher
     public let onSelect: (ClipItem) -> Void
 
-    public init(history: [ClipItem], searchQuery: String, onSelect: @escaping (ClipItem) -> Void) {
-        self.history = history
-        self.searchQuery = searchQuery
+    public init(watcher: PasteboardWatcher, onSelect: @escaping (ClipItem) -> Void) {
+        self.watcher = watcher
         self.onSelect = onSelect
     }
 
-    private var filteredHistory: [ClipItem] {
-        if searchQuery.isEmpty {
-            return history
-        } else {
-            return history.filter { $0.rawContent.localizedCaseInsensitiveContains(searchQuery) }
-        }
-    }
-
     public var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("PAST CLIPBOARD ITEMS")
-                .font(.system(size: 10, weight: .bold, design: .monospaced))
-                .foregroundColor(.secondary)
-                .padding(.horizontal, 8)
+        VStack(alignment: .leading, spacing: 8) {
+            // Header Bar & View Mode Toggle
+            HStack {
+                Text("PAST CLIPBOARD ITEMS")
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundColor(.secondary)
 
-            if filteredHistory.isEmpty {
-                Text("No items found")
+                Spacer()
+
+                Button(action: {
+                    watcher.isGroupedByCategory.toggle()
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: watcher.isGroupedByCategory ? "folder.fill" : "clock.fill")
+                            .font(.system(size: 9))
+                        Text(watcher.isGroupedByCategory ? "By Category" : "Recent")
+                            .font(.system(size: 9, weight: .bold, design: .monospaced))
+                    }
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.primary.opacity(0.08))
+                    .cornerRadius(4)
+                }
+                .buttonStyle(.plain)
+
+                if !watcher.history.isEmpty {
+                    Button(action: {
+                        watcher.clearHistory()
+                    }) {
+                        Text("Clear All")
+                            .font(.system(size: 9, weight: .bold, design: .monospaced))
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.leading, 4)
+                }
+            }
+            .padding(.horizontal, 4)
+
+            // Category Filter Pills Bar
+            if !watcher.history.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        CategoryPillView(
+                            title: "All (\(watcher.history.count))",
+                            iconName: "square.grid.2x2",
+                            isSelected: watcher.selectedCategory == nil
+                        ) {
+                            watcher.selectedCategory = nil
+                        }
+
+                        ForEach(watcher.categoriesInHistory) { cat in
+                            let count = watcher.history.filter { $0.category == cat }.count
+                            CategoryPillView(
+                                title: "\(cat.rawValue) (\(count))",
+                                iconName: cat.systemImageName,
+                                isSelected: watcher.selectedCategory == cat
+                            ) {
+                                watcher.selectedCategory = (watcher.selectedCategory == cat) ? nil : cat
+                            }
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+
+            // Main Content Area
+            if watcher.filteredHistory.isEmpty {
+                Text(watcher.history.isEmpty ? "No clipboard history yet" : "No items matching filter")
                     .font(.system(size: 12))
                     .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 4) {
-                        ForEach(filteredHistory) { item in
-                            HistoryRowItemView(item: item) {
-                                onSelect(item)
+                    if watcher.isGroupedByCategory {
+                        VStack(alignment: .leading, spacing: 10) {
+                            ForEach(groupedCategories, id: \.self) { cat in
+                                let items = itemsForCategory(cat)
+                                if !items.isEmpty {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        HStack(spacing: 6) {
+                                            Image(systemName: cat.systemImageName)
+                                                .font(.system(size: 10, weight: .bold))
+                                                .foregroundColor(.blue)
+                                            Text(cat.rawValue.uppercased())
+                                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                                .foregroundColor(.secondary)
+                                            Text("(\(items.count))")
+                                                .font(.system(size: 9))
+                                                .foregroundColor(.secondary)
+                                        }
+                                        .padding(.top, 4)
+
+                                        ForEach(items) { item in
+                                            HistoryRowItemView(item: item) {
+                                                onSelect(item)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        LazyVStack(spacing: 4) {
+                            ForEach(watcher.filteredHistory) { item in
+                                HistoryRowItemView(item: item) {
+                                    onSelect(item)
+                                }
                             }
                         }
                     }
@@ -44,6 +126,41 @@ public struct HistoryListView: View {
                 .frame(maxHeight: 180)
             }
         }
+    }
+
+    private var groupedCategories: [ClipCategory] {
+        if let selected = watcher.selectedCategory {
+            return [selected]
+        }
+        return watcher.categoriesInHistory
+    }
+
+    private func itemsForCategory(_ category: ClipCategory) -> [ClipItem] {
+        return watcher.filteredHistory.filter { $0.category == category }
+    }
+}
+
+struct CategoryPillView: View {
+    let title: String
+    let iconName: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 4) {
+                Image(systemName: iconName)
+                    .font(.system(size: 9))
+                Text(title)
+                    .font(.system(size: 10, weight: isSelected ? .bold : .medium, design: .monospaced))
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(isSelected ? Color.blue : Color.primary.opacity(0.06))
+            .foregroundColor(isSelected ? .white : .primary)
+            .cornerRadius(12)
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -68,6 +185,10 @@ struct HistoryRowItemView: View {
                     HStack(spacing: 8) {
                         Text(item.category.rawValue)
                             .font(.system(size: 9, weight: .semibold))
+                            .foregroundColor(.blue)
+
+                        Text(item.category.domain.rawValue)
+                            .font(.system(size: 8))
                             .foregroundColor(.secondary)
 
                         Text(formattedTime(item.createdAt))
@@ -92,3 +213,4 @@ struct HistoryRowItemView: View {
         return formatter.string(from: date)
     }
 }
+

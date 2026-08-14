@@ -1,5 +1,23 @@
 import Foundation
 
+public enum CategoryDomain: String, Codable, CaseIterable, Identifiable {
+    case devData = "Developer Data"
+    case webEncoding = "Web & Encoding"
+    case textFormatting = "Text & Formatting"
+    case designUtilities = "Design & Utilities"
+
+    public var id: String { rawValue }
+
+    public var systemImageName: String {
+        switch self {
+        case .devData: return "cpu"
+        case .webEncoding: return "network"
+        case .textFormatting: return "text.alignleft"
+        case .designUtilities: return "slider.horizontal.3"
+        }
+    }
+}
+
 public enum ClipCategory: String, Codable, CaseIterable, Identifiable {
     case url = "URL"
     case json = "JSON"
@@ -34,4 +52,18 @@ public enum ClipCategory: String, Codable, CaseIterable, Identifiable {
         case .text: return "doc.text"
         }
     }
+
+    public var domain: CategoryDomain {
+        switch self {
+        case .json, .curl, .sql, .jwt:
+            return .devData
+        case .url, .base64, .htmlEntity:
+            return .webEncoding
+        case .sort, .markdownTable, .regex, .text:
+            return .textFormatting
+        case .color, .timestamp:
+            return .designUtilities
+        }
+    }
 }
+

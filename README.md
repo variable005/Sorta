@@ -102,6 +102,18 @@ The 13 categories are organized across **4 primary functional domains**:
 
 ---
 
+### In-App Auto-Sorting & Category Filtering
+
+SORTA automatically sorts and categorizes copied materials across multiple UI surfaces:
+
+- **Category Filter Pills Bar**: Filter your clipboard history with one click using interactive category pills (`All`, `JSON`, `cURL`, `SQL`, `URL`, `Color`, etc.) showing real-time item counts.
+- **Auto-Grouped Category View**: Toggle between **Recent Chronological** list view and **By Category** grouped view that automatically sorts copied items into domain headers (`DEVELOPER DATA`, `WEB & ENCODING`, etc.).
+- **macOS Menu Bar Categorized Submenus**: Access your copied materials auto-sorted into category submenus directly from the macOS status bar menu without bringing up the main HUD.
+- **Domain Category Badges**: Every clipboard entry in the HUD displays its primary category icon alongside its parent domain badge.
+
+---
+
+
 ### Categorization Matrix & Detection Rules
 
 Below is the complete categorization taxonomy showing how SORTA detects clipboard content:

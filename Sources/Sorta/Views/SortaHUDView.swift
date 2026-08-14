@@ -93,6 +93,10 @@ public struct SortaHUDView: View {
                                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                                     .foregroundColor(.blue)
 
+                                Text("• \(watcher.currentCategory.domain.rawValue)")
+                                    .font(.system(size: 9, weight: .medium))
+                                    .foregroundColor(.secondary)
+
                                 Spacer()
 
                                 Text("CURRENT CLIPBOARD")
@@ -137,8 +141,7 @@ public struct SortaHUDView: View {
 
                     // History Section
                     HistoryListView(
-                        history: watcher.history,
-                        searchQuery: watcher.searchQuery
+                        watcher: watcher
                     ) { selectedItem in
                         let pasteboardOption = TransformOption(
                             title: "Paste Raw",
