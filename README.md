@@ -106,9 +106,11 @@ The 13 categories are organized across **4 primary functional domains**:
 
 SORTA automatically sorts and categorizes copied materials across multiple UI surfaces:
 
-- **Category Filter Pills Bar**: Filter your clipboard history with one click using interactive category pills (`All`, `JSON`, `cURL`, `SQL`, `URL`, `Color`, etc.) showing real-time item counts.
+- **Persistent Pinned Snippets (⭐️)**: Pin frequently used code snippets, regex patterns, or API endpoints. Pinned snippets persist across system restarts and are saved locally on disk.
+- **Category Filter Pills Bar**: Filter your clipboard history with one click using interactive category pills (`Pinned ⭐️`, `All`, `JSON`, `cURL`, `SQL`, `URL`, `Color`, etc.) showing real-time item counts.
 - **Auto-Grouped Category View**: Toggle between **Recent Chronological** list view and **By Category** grouped view that automatically sorts copied items into domain headers (`DEVELOPER DATA`, `WEB & ENCODING`, etc.).
-- **macOS Menu Bar Categorized Submenus**: Access your copied materials auto-sorted into category submenus directly from the macOS status bar menu without bringing up the main HUD.
+- **macOS Menu Bar Categorized & Pinned Submenus**: Access your pinned snippets and auto-sorted categories directly from the macOS status bar menu without opening the HUD.
+- **Clear Unpinned Safety**: Clearing history preserves your pinned snippets so you never lose critical boilerplate.
 - **Domain Category Badges**: Every clipboard entry in the HUD displays its primary category icon alongside its parent domain badge.
 
 ---

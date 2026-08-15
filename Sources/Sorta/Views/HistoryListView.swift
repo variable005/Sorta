@@ -37,9 +37,9 @@ public struct HistoryListView: View {
 
                 if !watcher.history.isEmpty {
                     Button(action: {
-                        watcher.clearHistory()
+                        watcher.clearHistory(preservePinned: true)
                     }) {
-                        Text("Clear All")
+                        Text("Clear Unpinned")
                             .font(.system(size: 9, weight: .bold, design: .monospaced))
                             .foregroundColor(.secondary)
                     }
@@ -53,11 +53,23 @@ public struct HistoryListView: View {
             if !watcher.history.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {
+                        // Pinned Filter Pill
+                        CategoryPillView(
+                            title: "Pinned ⭐️ (\(watcher.pinnedItems.count))",
+                            iconName: "star.fill",
+                            isSelected: watcher.isFilterPinnedOnly,
+                            activeColor: Color.yellow
+                        ) {
+                            watcher.isFilterPinnedOnly.toggle()
+                        }
+
+                        // All Pill
                         CategoryPillView(
                             title: "All (\(watcher.history.count))",
                             iconName: "square.grid.2x2",
-                            isSelected: watcher.selectedCategory == nil
+                            isSelected: watcher.selectedCategory == nil && !watcher.isFilterPinnedOnly
                         ) {
+                            watcher.isFilterPinnedOnly = false
                             watcher.selectedCategory = nil
                         }
 
@@ -66,8 +78,9 @@ public struct HistoryListView: View {
                             CategoryPillView(
                                 title: "\(cat.rawValue) (\(count))",
                                 iconName: cat.systemImageName,
-                                isSelected: watcher.selectedCategory == cat
+                                isSelected: watcher.selectedCategory == cat && !watcher.isFilterPinnedOnly
                             ) {
+                                watcher.isFilterPinnedOnly = false
                                 watcher.selectedCategory = (watcher.selectedCategory == cat) ? nil : cat
                             }
                         }
@@ -105,9 +118,11 @@ public struct HistoryListView: View {
                                         .padding(.top, 4)
 
                                         ForEach(items) { item in
-                                            HistoryRowItemView(item: item) {
-                                                onSelect(item)
-                                            }
+                                            HistoryRowItemView(
+                                                item: item,
+                                                onSelect: { onSelect(item) },
+                                                onTogglePin: { watcher.togglePin(item: item) }
+                                            )
                                         }
                                     }
                                 }
@@ -116,9 +131,11 @@ public struct HistoryListView: View {
                     } else {
                         LazyVStack(spacing: 4) {
                             ForEach(watcher.filteredHistory) { item in
-                                HistoryRowItemView(item: item) {
-                                    onSelect(item)
-                                }
+                                HistoryRowItemView(
+                                    item: item,
+                                    onSelect: { onSelect(item) },
+                                    onTogglePin: { watcher.togglePin(item: item) }
+                                )
                             }
                         }
                     }
@@ -144,6 +161,7 @@ struct CategoryPillView: View {
     let title: String
     let iconName: String
     let isSelected: Bool
+    var activeColor: Color = .blue
     let action: () -> Void
 
     var body: some View {
@@ -156,8 +174,8 @@ struct CategoryPillView: View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
-            .background(isSelected ? Color.blue : Color.primary.opacity(0.06))
-            .foregroundColor(isSelected ? .white : .primary)
+            .background(isSelected ? activeColor : Color.primary.opacity(0.06))
+            .foregroundColor(isSelected ? (activeColor == .yellow ? .black : .white) : .primary)
             .cornerRadius(12)
         }
         .buttonStyle(.plain)
@@ -167,44 +185,55 @@ struct CategoryPillView: View {
 struct HistoryRowItemView: View {
     let item: ClipItem
     let onSelect: () -> Void
+    let onTogglePin: () -> Void
 
     var body: some View {
-        Button(action: onSelect) {
-            HStack(spacing: 10) {
-                Image(systemName: item.category.systemImageName)
-                    .font(.system(size: 12))
-                    .foregroundColor(.blue)
-                    .frame(width: 20)
+        HStack(spacing: 10) {
+            Button(action: onSelect) {
+                HStack(spacing: 10) {
+                    Image(systemName: item.category.systemImageName)
+                        .font(.system(size: 12))
+                        .foregroundColor(.blue)
+                        .frame(width: 20)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.rawContent.trimmingCharacters(in: .whitespacesAndNewlines))
-                        .font(.system(size: 12, design: .monospaced))
-                        .lineLimit(1)
-                        .foregroundColor(.primary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(item.rawContent.trimmingCharacters(in: .whitespacesAndNewlines))
+                            .font(.system(size: 12, design: .monospaced))
+                            .lineLimit(1)
+                            .foregroundColor(.primary)
 
-                    HStack(spacing: 8) {
-                        Text(item.category.rawValue)
-                            .font(.system(size: 9, weight: .semibold))
-                            .foregroundColor(.blue)
+                        HStack(spacing: 8) {
+                            Text(item.category.rawValue)
+                                .font(.system(size: 9, weight: .semibold))
+                                .foregroundColor(.blue)
 
-                        Text(item.category.domain.rawValue)
-                            .font(.system(size: 8))
-                            .foregroundColor(.secondary)
+                            Text(item.category.domain.rawValue)
+                                .font(.system(size: 8))
+                                .foregroundColor(.secondary)
 
-                        Text(formattedTime(item.createdAt))
-                            .font(.system(size: 9))
-                            .foregroundColor(.secondary)
+                            Text(formattedTime(item.createdAt))
+                                .font(.system(size: 9))
+                                .foregroundColor(.secondary)
+                        }
                     }
-                }
 
-                Spacer()
+                    Spacer()
+                }
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Color.primary.opacity(0.03))
-            .cornerRadius(6)
+            .buttonStyle(.plain)
+
+            Button(action: onTogglePin) {
+                Image(systemName: item.isPinned ? "star.fill" : "star")
+                    .font(.system(size: 12))
+                    .foregroundColor(item.isPinned ? .yellow : .secondary.opacity(0.4))
+                    .padding(4)
+            }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color.primary.opacity(0.03))
+        .cornerRadius(6)
     }
 
     private func formattedTime(_ date: Date) -> String {
@@ -213,4 +242,5 @@ struct HistoryRowItemView: View {
         return formatter.string(from: date)
     }
 }
+
 

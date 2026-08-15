@@ -11,6 +11,13 @@ public final class PasteboardWatcher: ObservableObject {
     @Published public var searchQuery: String = ""
     @Published public var selectedCategory: ClipCategory? = nil
     @Published public var isGroupedByCategory: Bool = false
+    @Published public var isFilterPinnedOnly: Bool = false
+
+    private let storageKey = "Sorta_ClipboardHistory_v1"
+
+    public var pinnedItems: [ClipItem] {
+        history.filter { $0.isPinned }
+    }
 
     public var categorizedHistory: [ClipCategory: [ClipItem]] {
         Dictionary(grouping: history) { $0.category }
@@ -23,21 +30,49 @@ public final class PasteboardWatcher: ObservableObject {
 
     public var filteredHistory: [ClipItem] {
         history.filter { item in
+            let matchesPinned = !isFilterPinnedOnly || item.isPinned
             let matchesCategory = selectedCategory == nil || item.category == selectedCategory
             let matchesSearch = searchQuery.isEmpty || item.rawContent.localizedCaseInsensitiveContains(searchQuery)
-            return matchesCategory && matchesSearch
+            return matchesPinned && matchesCategory && matchesSearch
         }
     }
 
-    public func clearHistory() {
-        history.removeAll()
+    public init() {
+        loadState()
+    }
+
+    public func togglePin(item: ClipItem) {
+        if let idx = history.firstIndex(where: { $0.id == item.id }) {
+            history[idx].isPinned.toggle()
+            saveState()
+        }
+    }
+
+    public func clearHistory(preservePinned: Bool = true) {
+        if preservePinned {
+            history = history.filter { $0.isPinned }
+        } else {
+            history.removeAll()
+        }
+        saveState()
+    }
+
+    private func saveState() {
+        if let data = try? JSONEncoder().encode(history) {
+            UserDefaults.standard.set(data, forKey: storageKey)
+        }
+    }
+
+    private func loadState() {
+        if let data = UserDefaults.standard.data(forKey: storageKey),
+           let saved = try? JSONDecoder().decode([ClipItem].self, from: data) {
+            self.history = saved
+        }
     }
 
 
     private var lastChangeCount: Int = -1
     private var timer: Timer?
-
-    public init() {}
 
     public func startMonitoring() {
         lastChangeCount = NSPasteboard.general.changeCount
@@ -101,6 +136,7 @@ public final class PasteboardWatcher: ObservableObject {
             if history.count > 50 {
                 history.removeLast()
             }
+            saveState()
         }
     }
 

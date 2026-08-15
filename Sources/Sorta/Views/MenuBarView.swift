@@ -36,6 +36,24 @@ public final class MenuBarManager: ObservableObject {
 
         menu.addItem(NSMenuItem.separator())
 
+        // Pinned Snippets Submenu
+        if let watcher = watcher, !watcher.pinnedItems.isEmpty {
+            let pinnedHeader = NSMenuItem(title: "⭐️ Pinned Snippets (\(watcher.pinnedItems.count))", action: nil, keyEquivalent: "")
+            let pinnedSubmenu = NSMenu()
+
+            for clip in watcher.pinnedItems {
+                let snippet = String(clip.rawContent.prefix(40)).replacingOccurrences(of: "\n", with: " ")
+                let subMenuItem = NSMenuItem(title: snippet, action: #selector(copyHistorySnippet(_:)), keyEquivalent: "")
+                subMenuItem.representedObject = clip.rawContent
+                subMenuItem.target = self
+                pinnedSubmenu.addItem(subMenuItem)
+            }
+
+            pinnedHeader.submenu = pinnedSubmenu
+            menu.addItem(pinnedHeader)
+            menu.addItem(NSMenuItem.separator())
+        }
+
         // Categorized History Submenu
         if let watcher = watcher, !watcher.history.isEmpty {
             let catMenuHeader = NSMenuItem(title: "Categorized History", action: nil, keyEquivalent: "")
