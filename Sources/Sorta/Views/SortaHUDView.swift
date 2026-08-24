@@ -10,6 +10,10 @@ public struct SortaHUDView: View {
         self._viewModel = StateObject(wrappedValue: HUDViewModel(watcher: watcher))
     }
 
+    private var imageHistory: [ClipItem] {
+        watcher.history.filter { $0.isImage }
+    }
+
     public var body: some View {
         HStack(spacing: 0) {
             // OPTIONAL SIDEBAR: Hidden by default, toggled with Tab / Cmd+H or Hover Button
@@ -41,7 +45,7 @@ public struct SortaHUDView: View {
                     Divider()
                         .background(Color.white.opacity(0.08))
 
-                    // History List
+                    // History List (Switches to 2-column image grid when Image category is filtered)
                     HistoryListView(
                         viewModel: viewModel,
                         watcher: watcher,
@@ -204,20 +208,57 @@ public struct SortaHUDView: View {
 
                     // FULL CONTENT BODY
                     if item.isImage, let data = item.imageData, let nsImage = NSImage(data: data) {
-                        // Image Viewer
-                        ScrollView([.vertical, .horizontal]) {
-                            VStack {
-                                Image(nsImage: nsImage)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                                    .cornerRadius(6)
-                                    .shadow(color: Color.black.opacity(0.35), radius: 8, x: 0, y: 4)
-                                    .padding(18)
+                        VStack(spacing: 0) {
+                            // Primary Image Canvas
+                            ScrollView([.vertical, .horizontal]) {
+                                VStack {
+                                    Image(nsImage: nsImage)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .cornerRadius(8)
+                                        .shadow(color: Color.black.opacity(0.4), radius: 10, x: 0, y: 5)
+                                        .padding(16)
+                                }
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
                             }
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(Color.black.opacity(0.20))
+
+                            // Recent Image Strip / Mini-Gallery
+                            if imageHistory.count > 1 {
+                                Divider()
+                                    .background(Color.white.opacity(0.06))
+
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 6) {
+                                        ForEach(imageHistory) { imgItem in
+                                            if let imgData = imgItem.imageData, let thumb = NSImage(data: imgData) {
+                                                Button(action: {
+                                                    if let idx = viewModel.filteredHistory.firstIndex(where: { $0.id == imgItem.id }) {
+                                                        viewModel.selectedIndex = idx
+                                                    }
+                                                }) {
+                                                    Image(nsImage: thumb)
+                                                        .resizable()
+                                                        .aspectRatio(contentMode: .fill)
+                                                        .frame(width: 44, height: 44)
+                                                        .cornerRadius(4)
+                                                        .clipped()
+                                                        .overlay(
+                                                            RoundedRectangle(cornerRadius: 4)
+                                                                .stroke(imgItem.id == item.id ? Color.white : Color.white.opacity(0.12), lineWidth: imgItem.id == item.id ? 2 : 1)
+                                                        )
+                                                }
+                                                .buttonStyle(.plain)
+                                            }
+                                        }
+                                    }
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                }
+                                .background(Color.black.opacity(0.35))
+                            }
                         }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color.black.opacity(0.20))
                     } else {
                         // Text Viewer (Vertical scroll only, natural multiline text wrapping)
                         ScrollView(.vertical, showsIndicators: true) {

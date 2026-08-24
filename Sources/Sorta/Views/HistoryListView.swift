@@ -59,7 +59,7 @@ public struct HistoryListView: View {
                 }
             }
 
-            // Main List
+            // Main List or Image Grid
             if viewModel.filteredHistory.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: "doc.on.clipboard")
@@ -74,27 +74,53 @@ public struct HistoryListView: View {
             } else {
                 ScrollViewReader { proxy in
                     ScrollView {
-                        LazyVStack(spacing: 3) {
-                            ForEach(Array(viewModel.filteredHistory.enumerated()), id: \.element.id) { idx, item in
-                                CompactHistoryRow(
-                                    item: item,
-                                    isSelected: idx == viewModel.selectedIndex,
-                                    onSelect: {
-                                        viewModel.selectedIndex = idx
-                                        onSelect(item)
-                                    },
-                                    onDoubleClick: {
-                                        onDoubleClick(item)
-                                    },
-                                    onTogglePin: {
-                                        watcher.togglePin(item: item)
-                                    }
-                                )
-                                .id(idx)
+                        if viewModel.selectedCategory == .image {
+                            // 2-Column Responsive Image Grid
+                            LazyVGrid(columns: [GridItem(.flexible(), spacing: 6), GridItem(.flexible(), spacing: 6)], spacing: 6) {
+                                ForEach(Array(viewModel.filteredHistory.enumerated()), id: \.element.id) { idx, item in
+                                    ImageGridCell(
+                                        item: item,
+                                        isSelected: idx == viewModel.selectedIndex,
+                                        onSelect: {
+                                            viewModel.selectedIndex = idx
+                                            onSelect(item)
+                                        },
+                                        onDoubleClick: {
+                                            onDoubleClick(item)
+                                        },
+                                        onTogglePin: {
+                                            watcher.togglePin(item: item)
+                                        }
+                                    )
+                                    .id(idx)
+                                }
                             }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                        } else {
+                            // Standard Compact List
+                            LazyVStack(spacing: 3) {
+                                ForEach(Array(viewModel.filteredHistory.enumerated()), id: \.element.id) { idx, item in
+                                    CompactHistoryRow(
+                                        item: item,
+                                        isSelected: idx == viewModel.selectedIndex,
+                                        onSelect: {
+                                            viewModel.selectedIndex = idx
+                                            onSelect(item)
+                                        },
+                                        onDoubleClick: {
+                                            onDoubleClick(item)
+                                        },
+                                        onTogglePin: {
+                                            watcher.togglePin(item: item)
+                                        }
+                                    )
+                                    .id(idx)
+                                }
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
                         }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
                     }
                     .onChange(of: viewModel.selectedIndex) { _, newIdx in
                         withAnimation(.easeInOut(duration: 0.15)) {
@@ -132,6 +158,76 @@ struct CategoryPillView: View {
     }
 }
 
+struct ImageGridCell: View {
+    let item: ClipItem
+    let isSelected: Bool
+    let onSelect: () -> Void
+    let onDoubleClick: () -> Void
+    let onTogglePin: () -> Void
+
+    var body: some View {
+        Button(action: onSelect) {
+            ZStack(alignment: .bottomLeading) {
+                if let data = item.imageData, let img = NSImage(data: data) {
+                    Image(nsImage: img)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(height: 75)
+                        .clipped()
+                        .background(Color.white.opacity(0.04))
+                } else {
+                    Rectangle()
+                        .fill(Color.white.opacity(0.04))
+                        .frame(height: 75)
+                        .overlay(
+                            Image(systemName: "photo")
+                                .font(.system(size: 20))
+                                .foregroundColor(.secondary)
+                        )
+                }
+
+                // Dark gradient overlay at bottom
+                LinearGradient(
+                    colors: [Color.clear, Color.black.opacity(0.8)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 26)
+
+                // Info overlay
+                HStack(spacing: 3) {
+                    if let dims = item.imageDimensions {
+                        Text(dims)
+                            .font(.system(size: 7.5, weight: .semibold, design: .monospaced))
+                            .foregroundColor(.white.opacity(0.9))
+                            .lineLimit(1)
+                    }
+
+                    Spacer()
+
+                    if item.isPinned {
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 7.5))
+                            .foregroundColor(.yellow)
+                    }
+                }
+                .padding(.horizontal, 4)
+                .padding(.bottom, 3)
+            }
+            .cornerRadius(6)
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(isSelected ? Color.white.opacity(0.9) : Color.white.opacity(0.12), lineWidth: isSelected ? 2 : 1)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .simultaneousGesture(TapGesture(count: 2).onEnded {
+            onDoubleClick()
+        })
+    }
+}
+
 struct CompactHistoryRow: View {
     let item: ClipItem
     let isSelected: Bool
@@ -146,8 +242,9 @@ struct CompactHistoryRow: View {
                     Image(nsImage: img)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                        .frame(width: 18, height: 18)
+                        .frame(width: 20, height: 20)
                         .cornerRadius(3)
+                        .clipped()
                 } else {
                     Image(systemName: item.category.systemImageName)
                         .font(.system(size: 11))
