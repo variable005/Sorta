@@ -143,7 +143,7 @@ public struct SortaHUDView: View {
                                 .lineLimit(1)
                                 .truncationMode(.tail)
                         } else {
-                            Text("\(item.rawContent.count) chars • \(item.rawContent.components(separatedBy: .newlines).count) lines")
+                            Text("\(item.rawContent.count) chars • \(item.rawContent.components(separatedBy: .newlines).count) lines • \(countWords(item.rawContent)) words")
                                 .font(.system(size: 10, weight: .regular))
                                 .foregroundColor(.secondary)
                                 .lineLimit(1)
@@ -217,7 +217,7 @@ public struct SortaHUDView: View {
                     Divider()
                         .background(Color.white.opacity(0.08))
 
-                    // FULL CONTENT BODY
+                    // FULL CONTENT BODY (SMART FORMATTED VIEWER)
                     if item.isImage {
                         if imageHistory.count > 1 {
                             // Responsive Multi-Cell Image Grid (Strictly bounded 2-columns)
@@ -291,18 +291,8 @@ public struct SortaHUDView: View {
                             .background(Color.black.opacity(0.18))
                         }
                     } else {
-                        // Text Viewer (Vertical scroll only, natural multiline text wrapping)
-                        ScrollView(.vertical, showsIndicators: true) {
-                            Text(item.rawContent)
-                                .font(.system(size: 13, design: fontDesignForCategory(item.category)))
-                                .foregroundColor(.white.opacity(0.95))
-                                .lineSpacing(5)
-                                .multilineTextAlignment(.leading)
-                                .textSelection(.enabled)
-                                .padding(16)
-                                .frame(maxWidth: .infinity, alignment: .topLeading)
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        // SMART TEXT FORMATTER
+                        SmartTextFormatterView(item: item, watcher: watcher)
                     }
 
                     Divider()
@@ -367,6 +357,11 @@ public struct SortaHUDView: View {
         )
     }
 
+    private func countWords(_ string: String) -> Int {
+        let words = string.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
+        return words.count
+    }
+
     private func formatImageStats(_ item: ClipItem) -> String {
         var parts: [String] = []
         if let dims = item.imageDimensions {
@@ -382,6 +377,430 @@ public struct SortaHUDView: View {
         return parts.joined(separator: " • ")
     }
 
+    private func formattedFullDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+}
+
+/// Smart Context-Aware Formatter for various clipboard types
+struct SmartTextFormatterView: View {
+    let item: ClipItem
+    let watcher: PasteboardWatcher
+
+    var body: some View {
+        switch item.category {
+        case .color:
+            ColorDetailView(rawContent: item.rawContent, watcher: watcher)
+        case .timestamp:
+            TimestampDetailView(rawContent: item.rawContent)
+        case .jwt:
+            JWTDetailView(rawContent: item.rawContent)
+        case .json:
+            JSONCodeViewer(rawContent: item.rawContent)
+        case .url:
+            URLDetailView(rawContent: item.rawContent)
+        default:
+            StandardTextViewer(rawContent: item.rawContent, category: item.category)
+        }
+    }
+}
+
+/// Rich Visual Color Swatch & Code Formatter
+struct ColorDetailView: View {
+    let rawContent: String
+    let watcher: PasteboardWatcher
+
+    var parsedColor: (r: Double, g: Double, b: Double, hex: String, rgb: String)? {
+        let trimmed = rawContent.trimmingCharacters(in: .whitespacesAndNewlines)
+        var clean = trimmed
+        if clean.hasPrefix("#") { clean.removeFirst() }
+
+        if clean.count == 6, let hexNum = UInt32(clean, radix: 16) {
+            let r = Double((hexNum >> 16) & 0xFF) / 255.0
+            let g = Double((hexNum >> 8) & 0xFF) / 255.0
+            let b = Double(hexNum & 0xFF) / 255.0
+            let hexStr = "#\(clean.uppercased())"
+            let rgbStr = "rgb(\(Int(r * 255)), \(Int(g * 255)), \(Int(b * 255)))"
+            return (r, g, b, hexStr, rgbStr)
+        }
+        return nil
+    }
+
+    var body: some View {
+        if let col = parsedColor {
+            VStack(spacing: 16) {
+                // Color Tile
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(red: col.r, green: col.g, blue: col.b))
+                    .frame(width: 90, height: 90)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                    )
+                    .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 5)
+
+                // Color Details
+                VStack(spacing: 8) {
+                    ColorRow(label: "HEX", value: col.hex) { watcher.copyToClipboard(content: col.hex) }
+                    ColorRow(label: "RGB", value: col.rgb) { watcher.copyToClipboard(content: col.rgb) }
+                    ColorRow(label: "SwiftUI", value: String(format: "Color(red: %.2f, green: %.2f, blue: %.2f)", col.r, col.g, col.b)) {
+                        watcher.copyToClipboard(content: String(format: "Color(red: %.3f, green: %.3f, blue: %.3f)", col.r, col.g, col.b))
+                    }
+                }
+                .frame(maxWidth: 340)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(20)
+        } else {
+            StandardTextViewer(rawContent: rawContent, category: .color)
+        }
+    }
+}
+
+struct ColorRow: View {
+    let label: String
+    let value: String
+    let onCopy: () -> Void
+
+    var body: some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .foregroundColor(.secondary)
+                .frame(width: 60, alignment: .leading)
+
+            Text(value)
+                .font(.system(size: 12, design: .monospaced))
+                .foregroundColor(.white)
+                .textSelection(.enabled)
+
+            Spacer()
+
+            Button(action: onCopy) {
+                Image(systemName: "doc.on.doc")
+                    .font(.system(size: 10))
+                    .foregroundColor(.secondary)
+                    .padding(4)
+                    .background(Color.white.opacity(0.08))
+                    .cornerRadius(4)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color.white.opacity(0.04))
+        .cornerRadius(6)
+    }
+}
+
+/// Formatted Date & Timestamp Viewer
+struct TimestampDetailView: View {
+    let rawContent: String
+
+    var parsedDate: Date? {
+        let trimmed = rawContent.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let ts = Double(trimmed) {
+            let seconds = ts > 100_000_000_000 ? ts / 1000.0 : ts
+            return Date(timeIntervalSince1970: seconds)
+        }
+        let iso = ISO8601DateFormatter()
+        return iso.date(from: trimmed)
+    }
+
+    var body: some View {
+        if let date = parsedDate {
+            VStack(spacing: 14) {
+                Image(systemName: "calendar.badge.clock")
+                    .font(.system(size: 32))
+                    .foregroundColor(.secondary)
+
+                VStack(spacing: 6) {
+                    Text(formattedDate(date, style: .full))
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.white)
+
+                    Text(formattedTime(date))
+                        .font(.system(size: 13, design: .monospaced))
+                        .foregroundColor(.white.opacity(0.85))
+                }
+
+                HStack(spacing: 10) {
+                    PillBadge(label: "Relative", value: relativeTime(date))
+                    PillBadge(label: "Epoch", value: "\(Int(date.timeIntervalSince1970))")
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(20)
+        } else {
+            StandardTextViewer(rawContent: rawContent, category: .timestamp)
+        }
+    }
+
+    private func formattedDate(_ date: Date, style: DateFormatter.Style) -> String {
+        let f = DateFormatter()
+        f.dateStyle = style
+        return f.string(from: date)
+    }
+
+    private func formattedTime(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.timeStyle = .medium
+        f.timeZone = .current
+        return f.string(from: date)
+    }
+
+    private func relativeTime(_ date: Date) -> String {
+        let f = RelativeDateTimeFormatter()
+        f.unitsStyle = .full
+        return f.localizedString(for: date, relativeTo: Date())
+    }
+}
+
+struct PillBadge: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Text(label + ":")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundColor(.secondary)
+            Text(value)
+                .font(.system(size: 10, design: .monospaced))
+                .foregroundColor(.white)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Color.white.opacity(0.06))
+        .cornerRadius(6)
+    }
+}
+
+/// Decoded JWT Viewer with Claims Formatting
+struct JWTDetailView: View {
+    let rawContent: String
+
+    var decodedPayload: String? {
+        let parts = rawContent.split(separator: ".")
+        guard parts.count == 3 else { return nil }
+        var base64 = String(parts[1])
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+        while base64.count % 4 != 0 { base64.append("=") }
+        guard let data = Data(base64Encoded: base64),
+              let json = try? JSONSerialization.jsonObject(with: data),
+              let pretty = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]),
+              let str = String(data: pretty, encoding: .utf8) else {
+            return nil
+        }
+        return str
+    }
+
+    var body: some View {
+        if let payload = decodedPayload {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Decoded JWT Payload")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(.secondary)
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
+
+                JSONCodeViewer(rawContent: payload)
+            }
+        } else {
+            StandardTextViewer(rawContent: rawContent, category: .jwt)
+        }
+    }
+}
+
+/// Formatted JSON Code Viewer with Line Numbers
+struct JSONCodeViewer: View {
+    let rawContent: String
+
+    var formattedJSONLines: [String] {
+        let trimmed = rawContent.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let data = trimmed.data(using: .utf8),
+           let obj = try? JSONSerialization.jsonObject(with: data),
+           let prettyData = try? JSONSerialization.data(withJSONObject: obj, options: [.prettyPrinted, .sortedKeys]),
+           let prettyStr = String(data: prettyData, encoding: .utf8) {
+            return prettyStr.components(separatedBy: .newlines)
+        }
+        return rawContent.components(separatedBy: .newlines)
+    }
+
+    var body: some View {
+        ScrollView([.vertical, .horizontal], showsIndicators: true) {
+            HStack(alignment: .top, spacing: 12) {
+                // Line Numbers Gutter
+                VStack(alignment: .trailing, spacing: 4) {
+                    ForEach(1...max(1, formattedJSONLines.count), id: \.self) { lineNum in
+                        Text("\(lineNum)")
+                            .font(.system(size: 12, weight: .medium, design: .monospaced))
+                            .foregroundColor(.secondary.opacity(0.4))
+                    }
+                }
+                .padding(.trailing, 4)
+                .overlay(
+                    Rectangle()
+                        .fill(Color.white.opacity(0.08))
+                        .frame(width: 1),
+                    alignment: .trailing
+                )
+
+                // Formatted Code Body
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(Array(formattedJSONLines.enumerated()), id: \.offset) { _, line in
+                        Text(line)
+                            .font(.system(size: 12, weight: .regular, design: .monospaced))
+                            .foregroundColor(.white.opacity(0.95))
+                    }
+                }
+            }
+            .textSelection(.enabled)
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black.opacity(0.20))
+    }
+}
+
+/// Clean URL Inspector
+struct URLDetailView: View {
+    let rawContent: String
+
+    var urlComponents: URLComponents? {
+        URLComponents(string: rawContent.trimmingCharacters(in: .whitespacesAndNewlines))
+    }
+
+    var body: some View {
+        ScrollView(.vertical, showsIndicators: true) {
+            VStack(alignment: .leading, spacing: 12) {
+                // Main URL String
+                Text(rawContent)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white)
+                    .lineSpacing(4)
+                    .textSelection(.enabled)
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.white.opacity(0.04))
+                    .cornerRadius(8)
+
+                if let comps = urlComponents {
+                    // Host & Path Badges
+                    HStack(spacing: 8) {
+                        if let host = comps.host {
+                            PillBadge(label: "Host", value: host)
+                        }
+                        if !comps.path.isEmpty && comps.path != "/" {
+                            PillBadge(label: "Path", value: comps.path)
+                        }
+                    }
+
+                    // Query Parameters List
+                    if let queryItems = comps.queryItems, !queryItems.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Query Parameters (\(queryItems.count))")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.secondary)
+
+                            VStack(spacing: 3) {
+                                ForEach(queryItems, id: \.name) { q in
+                                    HStack {
+                                        Text(q.name)
+                                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                                            .foregroundColor(.white.opacity(0.8))
+                                            .frame(minWidth: 70, alignment: .leading)
+
+                                        Text(q.value ?? "")
+                                            .font(.system(size: 11, design: .monospaced))
+                                            .foregroundColor(.secondary)
+                                            .lineLimit(1)
+                                            .truncationMode(.middle)
+
+                                        Spacer()
+                                    }
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Color.white.opacity(0.03))
+                                    .cornerRadius(5)
+                                }
+                            }
+                        }
+                        .padding(.top, 4)
+                    }
+                }
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+/// Standard High-Contrast Text Viewer with Line Numbers for multi-line content
+struct StandardTextViewer: View {
+    let rawContent: String
+    let category: ClipCategory
+
+    var lines: [String] {
+        rawContent.components(separatedBy: .newlines)
+    }
+
+    var body: some View {
+        ScrollView(.vertical, showsIndicators: true) {
+            if lines.count > 2 {
+                // Multi-line code / list viewer with subtle line numbers
+                HStack(alignment: .top, spacing: 10) {
+                    VStack(alignment: .trailing, spacing: 4) {
+                        ForEach(1...lines.count, id: \.self) { lineNum in
+                            Text("\(lineNum)")
+                                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                .foregroundColor(.secondary.opacity(0.35))
+                        }
+                    }
+                    .padding(.trailing, 4)
+                    .overlay(
+                        Rectangle()
+                            .fill(Color.white.opacity(0.08))
+                            .frame(width: 1),
+                        alignment: .trailing
+                    )
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+                            Text(line.isEmpty ? " " : line)
+                                .font(.system(size: 12.5, design: fontDesignForCategory(category)))
+                                .foregroundColor(.white.opacity(0.95))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                }
+                .textSelection(.enabled)
+                .padding(16)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+            } else {
+                // Single/few line standard comfortable text
+                Text(rawContent)
+                    .font(.system(size: 13.5, design: fontDesignForCategory(category)))
+                    .foregroundColor(.white.opacity(0.95))
+                    .lineSpacing(5)
+                    .multilineTextAlignment(.leading)
+                    .textSelection(.enabled)
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
     private func fontDesignForCategory(_ category: ClipCategory) -> Font.Design {
         switch category {
         case .json, .curl, .jwt, .sort:
@@ -389,13 +808,6 @@ public struct SortaHUDView: View {
         default:
             return .default
         }
-    }
-
-    private func formattedFullDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
     }
 }
 
