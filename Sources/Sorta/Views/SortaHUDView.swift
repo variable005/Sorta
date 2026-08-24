@@ -104,7 +104,7 @@ public struct SortaHUDView: View {
                                         .font(.system(size: 11, weight: .medium))
                                 }
                             }
-                            .foregroundColor(viewModel.isSidebarVisible ? .blue : .secondary)
+                            .foregroundColor(viewModel.isSidebarVisible ? .primary : .secondary)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 4)
                             .background(Color.white.opacity(viewModel.isSidebarVisible ? 0.12 : (viewModel.isHovering ? 0.08 : 0.0)))
@@ -115,7 +115,7 @@ public struct SortaHUDView: View {
                         // Category Badge
                         HStack(spacing: 5) {
                             Image(systemName: item.category.systemImageName)
-                                .foregroundColor(.blue)
+                                .foregroundColor(.secondary)
                                 .font(.system(size: 11, weight: .semibold))
 
                             Text(item.category.rawValue)
@@ -124,7 +124,7 @@ public struct SortaHUDView: View {
                         }
                         .padding(.horizontal, 7)
                         .padding(.vertical, 3)
-                        .background(Color.blue.opacity(0.15))
+                        .background(Color.white.opacity(0.08))
                         .cornerRadius(5)
 
                         // Stats
@@ -178,10 +178,10 @@ public struct SortaHUDView: View {
                                     Text("Paste")
                                         .font(.system(size: 11, weight: .bold))
                                 }
-                                .foregroundColor(.white)
+                                .foregroundColor(.black)
                                 .padding(.horizontal, 9)
                                 .padding(.vertical, 4)
-                                .background(Color.blue)
+                                .background(Color.white)
                                 .cornerRadius(5)
                             }
                             .buttonStyle(.plain)
@@ -248,7 +248,7 @@ public struct SortaHUDView: View {
         .frame(width: viewModel.isSidebarVisible ? 720 : 580, height: 440)
         .background(
             ZStack {
-                Color(red: 0.10, green: 0.10, blue: 0.12).opacity(0.96)
+                Color(red: 0.11, green: 0.11, blue: 0.12).opacity(0.96)
                 VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
             }
         )

@@ -15,9 +15,9 @@ public struct SmartActionRowView: View {
                 if let key = option.shortcutKey {
                     Text(key)
                         .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .foregroundColor(.blue)
+                        .foregroundColor(.primary)
                         .frame(width: 22, height: 22)
-                        .background(Color.blue.opacity(0.12))
+                        .background(Color.white.opacity(0.10))
                         .cornerRadius(6)
                 }
 
@@ -44,12 +44,12 @@ public struct SmartActionRowView: View {
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(Color.primary.opacity(0.04))
+                .background(Color.white.opacity(0.06))
                 .cornerRadius(6)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Color.primary.opacity(0.03))
+            .background(Color.white.opacity(0.03))
             .cornerRadius(8)
             .contentShape(Rectangle())
         }

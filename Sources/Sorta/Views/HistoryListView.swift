@@ -111,7 +111,7 @@ struct CategoryPillView: View {
     let title: String
     let iconName: String
     let isSelected: Bool
-    var activeColor: Color = .blue
+    var activeColor: Color = Color.white.opacity(0.22)
     let action: () -> Void
 
     var body: some View {
@@ -124,7 +124,7 @@ struct CategoryPillView: View {
             }
             .padding(.horizontal, 7)
             .padding(.vertical, 3)
-            .background(isSelected ? activeColor : Color.white.opacity(0.08))
+            .background(isSelected ? activeColor : Color.white.opacity(0.06))
             .foregroundColor(isSelected ? (activeColor == .yellow ? .black : .white) : .primary.opacity(0.8))
             .cornerRadius(6)
         }
@@ -144,7 +144,7 @@ struct CompactHistoryRow: View {
             HStack(spacing: 8) {
                 Image(systemName: item.category.systemImageName)
                     .font(.system(size: 11))
-                    .foregroundColor(isSelected ? .blue : .secondary)
+                    .foregroundColor(isSelected ? .primary : .secondary)
                     .frame(width: 16)
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -156,7 +156,7 @@ struct CompactHistoryRow: View {
                     HStack(spacing: 4) {
                         Text(item.category.rawValue)
                             .font(.system(size: 9, weight: .medium))
-                            .foregroundColor(isSelected ? .blue.opacity(0.9) : .secondary)
+                            .foregroundColor(isSelected ? .white.opacity(0.85) : .secondary)
 
                         Text("•")
                             .font(.system(size: 8))
@@ -179,12 +179,12 @@ struct CompactHistoryRow: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
             .background(
-                isSelected ? Color.blue.opacity(0.25) : Color.clear
+                isSelected ? Color.white.opacity(0.12) : Color.clear
             )
             .cornerRadius(6)
             .overlay(
                 RoundedRectangle(cornerRadius: 6)
-                    .stroke(isSelected ? Color.blue.opacity(0.5) : Color.clear, lineWidth: 1)
+                    .stroke(isSelected ? Color.white.opacity(0.20) : Color.clear, lineWidth: 1)
             )
             .contentShape(Rectangle())
         }
