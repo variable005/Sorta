@@ -209,9 +209,9 @@ public struct SortaHUDView: View {
                     // FULL CONTENT BODY
                     if item.isImage {
                         if imageHistory.count > 1 {
-                            // Responsive Multi-Cell Image Grid
+                            // Responsive Multi-Cell Image Grid (Strictly bounded 2-columns)
                             ScrollView(.vertical, showsIndicators: true) {
-                                LazyVGrid(columns: [GridItem(.adaptive(minimum: 140, maximum: 200), spacing: 10)], spacing: 10) {
+                                LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
                                     ForEach(imageHistory) { imgItem in
                                         ImageGridCard(
                                             item: imgItem,
@@ -383,7 +383,7 @@ public struct SortaHUDView: View {
     }
 }
 
-/// Modern Image Grid Card for multi-image gallery view
+/// Modern Image Grid Card with strictly bounded aspect-fill rendering
 struct ImageGridCard: View {
     let item: ClipItem
     let isSelected: Bool
@@ -395,16 +395,19 @@ struct ImageGridCard: View {
         Button(action: onSelect) {
             ZStack(alignment: .bottomLeading) {
                 if let data = item.imageData, let img = NSImage(data: data) {
-                    Image(nsImage: img)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(height: 105)
+                    Color.clear
+                        .frame(height: 120)
+                        .overlay(
+                            Image(nsImage: img)
+                                .resizable()
+                                .scaledToFill()
+                        )
                         .clipped()
                         .background(Color.white.opacity(0.04))
                 } else {
                     Rectangle()
                         .fill(Color.white.opacity(0.04))
-                        .frame(height: 105)
+                        .frame(height: 120)
                         .overlay(
                             Image(systemName: "photo")
                                 .font(.system(size: 24))
@@ -418,7 +421,7 @@ struct ImageGridCard: View {
                     startPoint: .top,
                     endPoint: .bottom
                 )
-                .frame(height: 32)
+                .frame(height: 34)
 
                 // Info overlay
                 HStack(spacing: 4) {
@@ -437,15 +440,15 @@ struct ImageGridCard: View {
                             .foregroundColor(.yellow)
                     }
                 }
-                .padding(.horizontal, 6)
-                .padding(.bottom, 5)
+                .padding(.horizontal, 8)
+                .padding(.bottom, 6)
             }
+            .frame(maxWidth: .infinity)
             .cornerRadius(8)
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(isSelected ? Color.white : Color.white.opacity(0.12), lineWidth: isSelected ? 2 : 1)
             )
-            .shadow(color: isSelected ? Color.black.opacity(0.5) : Color.clear, radius: 5)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

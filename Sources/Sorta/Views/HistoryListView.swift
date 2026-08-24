@@ -169,10 +169,13 @@ struct ImageGridCell: View {
         Button(action: onSelect) {
             ZStack(alignment: .bottomLeading) {
                 if let data = item.imageData, let img = NSImage(data: data) {
-                    Image(nsImage: img)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
+                    Color.clear
                         .frame(height: 75)
+                        .overlay(
+                            Image(nsImage: img)
+                                .resizable()
+                                .scaledToFill()
+                        )
                         .clipped()
                         .background(Color.white.opacity(0.04))
                 } else {
@@ -214,6 +217,7 @@ struct ImageGridCell: View {
                 .padding(.horizontal, 4)
                 .padding(.bottom, 3)
             }
+            .frame(maxWidth: .infinity)
             .cornerRadius(6)
             .overlay(
                 RoundedRectangle(cornerRadius: 6)
@@ -239,10 +243,13 @@ struct CompactHistoryRow: View {
         Button(action: onSelect) {
             HStack(spacing: 8) {
                 if item.isImage, let data = item.imageData, let img = NSImage(data: data) {
-                    Image(nsImage: img)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
+                    Color.clear
                         .frame(width: 20, height: 20)
+                        .overlay(
+                            Image(nsImage: img)
+                                .resizable()
+                                .scaledToFill()
+                        )
                         .cornerRadius(3)
                         .clipped()
                 } else {
