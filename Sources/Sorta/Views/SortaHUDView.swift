@@ -89,7 +89,7 @@ public struct SortaHUDView: View {
                     .background(Color.white.opacity(0.10))
             }
 
-            // MAIN AREA: Minimal Full Content Viewer
+            // MAIN AREA: Ultra-Minimal Content Viewer
             VStack(spacing: 0) {
                 if let item = viewModel.currentSelectedItem {
                     // Minimal Top Header Bar
@@ -134,21 +134,6 @@ public struct SortaHUDView: View {
                         .background(Color.white.opacity(0.08))
                         .cornerRadius(6)
                         .fixedSize()
-
-                        // Metadata Stats
-                        if item.isImage {
-                            Text(formatImageStats(item))
-                                .font(.system(size: 10.5, weight: .regular))
-                                .foregroundColor(.secondary)
-                                .lineLimit(1)
-                                .truncationMode(.tail)
-                        } else {
-                            Text("\(item.rawContent.count) chars")
-                                .font(.system(size: 10.5, weight: .regular))
-                                .foregroundColor(.secondary)
-                                .lineLimit(1)
-                                .truncationMode(.tail)
-                        }
 
                         Spacer(minLength: 12)
 
@@ -261,28 +246,16 @@ public struct SortaHUDView: View {
                                             )
                                     }
 
-                                    HStack(spacing: 6) {
-                                        if let dims = item.imageDimensions {
-                                            Text(dims)
-                                                .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
-                                                .foregroundColor(.white.opacity(0.9))
-                                                .lineLimit(1)
-                                        }
-                                        if let count = item.imageData?.count {
-                                            Text("•")
-                                                .font(.system(size: 8))
-                                                .foregroundColor(.secondary)
-                                            Text("\(count / 1024) KB")
-                                                .font(.system(size: 10))
-                                                .foregroundColor(.secondary)
-                                                .lineLimit(1)
-                                        }
+                                    if let dims = item.imageDimensions {
+                                        Text(dims)
+                                            .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
+                                            .foregroundColor(.white.opacity(0.8))
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 4)
+                                            .background(Color.white.opacity(0.06))
+                                            .cornerRadius(6)
+                                            .fixedSize()
                                     }
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 4)
-                                    .background(Color.white.opacity(0.06))
-                                    .cornerRadius(6)
-                                    .fixedSize()
                                 }
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 .padding(20)
@@ -330,21 +303,6 @@ public struct SortaHUDView: View {
                 return viewModel.handleKeyDown(event: event)
             }
         )
-    }
-
-    private func formatImageStats(_ item: ClipItem) -> String {
-        var parts: [String] = []
-        if let dims = item.imageDimensions {
-            parts.append(dims)
-        }
-        if let count = item.imageData?.count {
-            if count > 1024 * 1024 {
-                parts.append(String(format: "%.1f MB", Double(count) / (1024.0 * 1024.0)))
-            } else {
-                parts.append("\(count / 1024) KB")
-            }
-        }
-        return parts.joined(separator: " • ")
     }
 }
 
