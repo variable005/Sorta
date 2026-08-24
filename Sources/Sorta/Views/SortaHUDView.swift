@@ -16,7 +16,7 @@ public struct SortaHUDView: View {
 
     public var body: some View {
         HStack(spacing: 0) {
-            // OPTIONAL SIDEBAR: Hidden by default, toggled with Tab / Cmd+H or Hover Button
+            // OPTIONAL SIDEBAR: Hidden by default, toggled with Tab / Cmd+H or History Button
             if viewModel.isSidebarVisible {
                 VStack(spacing: 0) {
                     // Search Bar
@@ -89,10 +89,10 @@ public struct SortaHUDView: View {
                     .background(Color.white.opacity(0.10))
             }
 
-            // MAIN AREA: Full Content Viewer
+            // MAIN AREA: Minimal Full Content Viewer
             VStack(spacing: 0) {
                 if let item = viewModel.currentSelectedItem {
-                    // Top Header Bar
+                    // Minimal Top Header Bar
                     HStack(spacing: 8) {
                         // Toggle Sidebar Button
                         Button(action: {
@@ -143,7 +143,7 @@ public struct SortaHUDView: View {
                                 .lineLimit(1)
                                 .truncationMode(.tail)
                         } else {
-                            Text("\(item.rawContent.count) chars • \(item.rawContent.components(separatedBy: .newlines).count) lines")
+                            Text("\(item.rawContent.count) chars")
                                 .font(.system(size: 10.5, weight: .regular))
                                 .foregroundColor(.secondary)
                                 .lineLimit(1)
@@ -152,7 +152,7 @@ public struct SortaHUDView: View {
 
                         Spacer(minLength: 12)
 
-                        // Action Buttons (Fixed single line, reveals on hover)
+                        // Action Buttons (Reveals on Hover)
                         HStack(spacing: 6) {
                             // Star / Pin
                             Button(action: {
@@ -217,7 +217,7 @@ public struct SortaHUDView: View {
                     Divider()
                         .background(Color.white.opacity(0.08))
 
-                    // MAIN CONTENT VIEWPORT
+                    // MAIN CONTENT VIEWPORT (Edge-to-Edge Clean Card)
                     VStack {
                         if item.isImage {
                             if imageHistory.count > 1 {
@@ -288,37 +288,12 @@ public struct SortaHUDView: View {
                                 .padding(20)
                             }
                         } else {
-                            // High-end Text Viewer in Frosted Card Container
+                            // High-end Text Viewer in Clean Card
                             SmartTextCardView(item: item, watcher: watcher)
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color.black.opacity(0.16))
-
-                    Divider()
-                        .background(Color.white.opacity(0.08))
-
-                    // Subtle Minimal Footer
-                    HStack {
-                        Text(formattedFullDate(item.createdAt))
-                            .font(.system(size: 10))
-                            .foregroundColor(.secondary.opacity(0.8))
-                            .lineLimit(1)
-
-                        Spacer()
-
-                        HStack(spacing: 10) {
-                            KeyboardBadge(key: "↵", label: "Paste")
-                            KeyboardBadge(key: "⌘C", label: "Copy")
-                            KeyboardBadge(key: "Tab", label: "History")
-                            KeyboardBadge(key: "esc", label: "Close")
-                        }
-                        .fixedSize()
-                        .opacity(viewModel.isHovering ? 1.0 : 0.4)
-                    }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 6)
-                    .background(Color.white.opacity(0.015))
                 } else {
                     VStack(spacing: 10) {
                         Image(systemName: "doc.on.clipboard")
@@ -333,7 +308,7 @@ public struct SortaHUDView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(width: viewModel.isSidebarVisible ? 720 : 580, height: 440)
+        .frame(width: viewModel.isSidebarVisible ? 720 : 580, height: 420)
         .background(
             ZStack {
                 Color(red: 0.11, green: 0.11, blue: 0.13).opacity(0.98)
@@ -370,13 +345,6 @@ public struct SortaHUDView: View {
             }
         }
         return parts.joined(separator: " • ")
-    }
-
-    private func formattedFullDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
     }
 }
 
@@ -855,29 +823,6 @@ struct ImageGridCard: View {
         .simultaneousGesture(TapGesture(count: 2).onEnded {
             onDoubleClick()
         })
-    }
-}
-
-struct KeyboardBadge: View {
-    let key: String
-    let label: String
-
-    var body: some View {
-        HStack(spacing: 3) {
-            Text(key)
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
-                .padding(.horizontal, 4)
-                .padding(.vertical, 1.5)
-                .background(Color.white.opacity(0.10))
-                .cornerRadius(3)
-                .foregroundColor(.primary.opacity(0.9))
-
-            Text(label)
-                .font(.system(size: 9.5))
-                .foregroundColor(.secondary)
-                .lineLimit(1)
-        }
-        .fixedSize()
     }
 }
 
