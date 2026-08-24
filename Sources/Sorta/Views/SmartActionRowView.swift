@@ -15,14 +15,10 @@ public struct SmartActionRowView: View {
                 if let key = option.shortcutKey {
                     Text(key)
                         .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .foregroundColor(.primary)
-                        .frame(width: 20, height: 20)
-                        .background(Color.primary.opacity(0.12))
-                        .cornerRadius(5)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 5)
-                                .stroke(Color.primary.opacity(0.2), lineWidth: 1)
-                        )
+                        .foregroundColor(.blue)
+                        .frame(width: 22, height: 22)
+                        .background(Color.blue.opacity(0.12))
+                        .cornerRadius(6)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -31,7 +27,7 @@ public struct SmartActionRowView: View {
                         .foregroundColor(.primary)
 
                     Text(option.detail)
-                        .font(.system(size: 11, weight: .regular, design: .monospaced))
+                        .font(.system(size: 11, design: .monospaced))
                         .foregroundColor(.secondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
@@ -39,18 +35,23 @@ public struct SmartActionRowView: View {
 
                 Spacer()
 
-                Text("Paste")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.primary.opacity(0.04))
-                    .cornerRadius(4)
+                HStack(spacing: 4) {
+                    Image(systemName: "return")
+                        .font(.system(size: 9, weight: .bold))
+                    Text("Paste")
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .foregroundColor(.secondary)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.primary.opacity(0.04))
+                .cornerRadius(6)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(Color.primary.opacity(0.04))
+            .background(Color.primary.opacity(0.03))
             .cornerRadius(8)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

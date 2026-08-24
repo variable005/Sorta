@@ -7,26 +7,17 @@ public final class PanelManager: ObservableObject {
     public static let shared = PanelManager()
 
     @Published public private(set) var isVisible: Bool = false
-    private var panel: NSPanel?
+    private var panel: HUDPanel?
 
     public init() {}
 
     public func configure<Content: View>(with rootView: Content) {
         let hostingView = NSHostingView(rootView: rootView)
 
-        let newPanel = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 560, height: 420),
-            styleMask: [.borderless, .nonactivatingPanel],
-            backing: .buffered,
-            defer: false
+        let newPanel = HUDPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 580, height: 440)
         )
-
-        newPanel.level = .floating
-        newPanel.isOpaque = false
-        newPanel.backgroundColor = .clear
-        newPanel.hasShadow = true
         newPanel.contentView = hostingView
-        newPanel.isMovableByWindowBackground = true
 
         self.panel = newPanel
     }
@@ -42,19 +33,25 @@ public final class PanelManager: ObservableObject {
     public func showPanel() {
         guard let panel = panel else { return }
 
-        // Position panel in the upper-center of the active screen
-        if let screen = NSScreen.main {
+        // Find the screen currently containing the mouse cursor, fallback to main screen
+        let mouseLocation = NSEvent.mouseLocation
+        let targetScreen = NSScreen.screens.first { NSMouseInRect(mouseLocation, $0.frame, false) } ?? NSScreen.main
+
+        if let screen = targetScreen {
             let screenRect = screen.visibleFrame
             let x = screenRect.midX - (panel.frame.width / 2)
-            let y = screenRect.maxY - panel.frame.height - 80
+            let y = screenRect.maxY - panel.frame.height - 100
             panel.setFrameOrigin(NSPoint(x: x, y: y))
         }
 
-        panel.orderFrontRegardless()
+        // Activate panel and make it key for instant keyboard focus
+        NSApp.activate(ignoringOtherApps: true)
+        panel.makeKeyAndOrderFront(nil)
         isVisible = true
     }
 
     public func hidePanel() {
+        guard isVisible else { return }
         panel?.orderOut(nil)
         isVisible = false
     }

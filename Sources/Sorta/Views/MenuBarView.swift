@@ -6,7 +6,7 @@ public final class MenuBarManager: ObservableObject {
     public static let shared = MenuBarManager()
 
     private var statusItem: NSStatusItem?
-    private var watcher: PasteboardWatcher?
+    private weak var watcher: PasteboardWatcher?
 
     public init() {}
 
@@ -16,8 +16,6 @@ public final class MenuBarManager: ObservableObject {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = statusItem?.button {
             button.image = NSImage(systemSymbolName: "scissors", accessibilityDescription: "Sorta")
-            button.action = #selector(statusItemClicked)
-            button.target = self
         }
 
         buildMenu()
@@ -27,7 +25,7 @@ public final class MenuBarManager: ObservableObject {
         let menu = NSMenu()
 
         let toggleItem = NSMenuItem(
-            title: "Toggle SORTA Panel (Option+Space)",
+            title: "Toggle SORTA Panel",
             action: #selector(togglePanel),
             keyEquivalent: ""
         )
@@ -35,53 +33,6 @@ public final class MenuBarManager: ObservableObject {
         menu.addItem(toggleItem)
 
         menu.addItem(NSMenuItem.separator())
-
-        // Pinned Snippets Submenu
-        if let watcher = watcher, !watcher.pinnedItems.isEmpty {
-            let pinnedHeader = NSMenuItem(title: "⭐️ Pinned Snippets (\(watcher.pinnedItems.count))", action: nil, keyEquivalent: "")
-            let pinnedSubmenu = NSMenu()
-
-            for clip in watcher.pinnedItems {
-                let snippet = String(clip.rawContent.prefix(40)).replacingOccurrences(of: "\n", with: " ")
-                let subMenuItem = NSMenuItem(title: snippet, action: #selector(copyHistorySnippet(_:)), keyEquivalent: "")
-                subMenuItem.representedObject = clip.rawContent
-                subMenuItem.target = self
-                pinnedSubmenu.addItem(subMenuItem)
-            }
-
-            pinnedHeader.submenu = pinnedSubmenu
-            menu.addItem(pinnedHeader)
-            menu.addItem(NSMenuItem.separator())
-        }
-
-        // Categorized History Submenu
-        if let watcher = watcher, !watcher.history.isEmpty {
-            let catMenuHeader = NSMenuItem(title: "Categorized History", action: nil, keyEquivalent: "")
-            let catSubmenu = NSMenu()
-
-            for cat in watcher.categoriesInHistory {
-                let items = watcher.history.filter { $0.category == cat }
-                if !items.isEmpty {
-                    let catItem = NSMenuItem(title: "\(cat.rawValue) (\(items.count))", action: nil, keyEquivalent: "")
-                    let catItemSubmenu = NSMenu()
-
-                    for clip in items.prefix(10) {
-                        let snippet = String(clip.rawContent.prefix(40)).replacingOccurrences(of: "\n", with: " ")
-                        let subMenuItem = NSMenuItem(title: snippet, action: #selector(copyHistorySnippet(_:)), keyEquivalent: "")
-                        subMenuItem.representedObject = clip.rawContent
-                        subMenuItem.target = self
-                        catItemSubmenu.addItem(subMenuItem)
-                    }
-
-                    catItem.submenu = catItemSubmenu
-                    catSubmenu.addItem(catItem)
-                }
-            }
-
-            catMenuHeader.submenu = catSubmenu
-            menu.addItem(catMenuHeader)
-            menu.addItem(NSMenuItem.separator())
-        }
 
         let clearItem = NSMenuItem(
             title: "Clear History",
@@ -104,27 +55,15 @@ public final class MenuBarManager: ObservableObject {
         statusItem?.menu = menu
     }
 
-    @objc private func copyHistorySnippet(_ sender: NSMenuItem) {
-        if let content = sender.representedObject as? String {
-            watcher?.copyToClipboard(content: content)
-        }
-    }
-
-    @objc private func statusItemClicked() {
-        PanelManager.shared.togglePanel()
-    }
-
     @objc private func togglePanel() {
         PanelManager.shared.togglePanel()
     }
 
     @objc private func clearHistory() {
         watcher?.clearHistory()
-        buildMenu()
     }
 
     @objc private func quitApp() {
         NSApplication.shared.terminate(nil)
     }
 }
-

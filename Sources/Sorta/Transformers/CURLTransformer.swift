@@ -8,6 +8,7 @@ public struct CURLTransformer: TransformerProtocol {
     public func detect(content: String) -> Bool {
         let trimmed = content
             .replacingOccurrences(of: "\\\n", with: " ")
+            .replacingOccurrences(of: "\\\r\n", with: " ")
             .trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.lowercased().hasPrefix("curl ")
     }
@@ -25,8 +26,8 @@ public struct CURLTransformer: TransformerProtocol {
         // 1. JS Fetch
         let fetchCode = generateFetch(parsed)
         options.append(TransformOption(
-            title: "Convert to JavaScript fetch()",
-            detail: "Modern async fetch snippet",
+            title: "JavaScript fetch()",
+            detail: "Modern async/await fetch snippet",
             shortcutKey: "\(index)",
             transformedContent: fetchCode
         ))
@@ -35,7 +36,7 @@ public struct CURLTransformer: TransformerProtocol {
         // 2. Python Requests
         let pythonCode = generatePython(parsed)
         options.append(TransformOption(
-            title: "Convert to Python requests",
+            title: "Python requests",
             detail: "Python requests library code",
             shortcutKey: "\(index)",
             transformedContent: pythonCode
@@ -45,8 +46,8 @@ public struct CURLTransformer: TransformerProtocol {
         // 3. Swift URLSession
         let swiftCode = generateSwift(parsed)
         options.append(TransformOption(
-            title: "Convert to Swift URLSession",
-            detail: "Native Swift async URLSession snippet",
+            title: "Swift URLSession",
+            detail: "Native Swift async URLSession request",
             shortcutKey: "\(index)",
             transformedContent: swiftCode
         ))
@@ -63,29 +64,92 @@ public struct CURLTransformer: TransformerProtocol {
 
     private func parseCURL(_ curlString: String) -> ParsedCURL {
         var parsed = ParsedCURL()
+        let tokens = tokenize(curlString)
 
-        // Extract URL and flags
-        let tokens = curlString.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
-        for (idx, token) in tokens.enumerated() {
-            let cleanToken = token.trimmingCharacters(in: CharacterSet(charactersIn: "'\""))
-            if cleanToken.hasPrefix("http://") || cleanToken.hasPrefix("https://") {
-                parsed.url = cleanToken
-            } else if (token == "-X" || token == "--request") && idx + 1 < tokens.count {
-                parsed.method = tokens[idx + 1].trimmingCharacters(in: CharacterSet(charactersIn: "'\"")).uppercased()
-            } else if (token == "-H" || token == "--header") && idx + 1 < tokens.count {
-                let headerStr = tokens[idx + 1].trimmingCharacters(in: CharacterSet(charactersIn: "'\""))
+        var i = 0
+        while i < tokens.count {
+            let token = tokens[i]
+
+            if (token == "-X" || token == "--request") && i + 1 < tokens.count {
+                parsed.method = tokens[i + 1].uppercased()
+                i += 2
+                continue
+            }
+
+            if (token == "-H" || token == "--header") && i + 1 < tokens.count {
+                let headerStr = tokens[i + 1]
                 let parts = headerStr.split(separator: ":", maxSplits: 1).map { String($0).trimmingCharacters(in: .whitespaces) }
                 if parts.count == 2 {
                     parsed.headers[parts[0]] = parts[1]
                 }
-            } else if (token == "-d" || token == "--data" || token == "--data-raw") && idx + 1 < tokens.count {
-                parsed.body = tokens[idx + 1].trimmingCharacters(in: CharacterSet(charactersIn: "'\""))
+                i += 2
+                continue
+            }
+
+            if (token == "-d" || token == "--data" || token == "--data-raw" || token == "--data-binary") && i + 1 < tokens.count {
+                parsed.body = tokens[i + 1]
                 if parsed.method == "GET" {
                     parsed.method = "POST"
                 }
+                i += 2
+                continue
             }
+
+            if (token.hasPrefix("http://") || token.hasPrefix("https://")) && !token.hasPrefix("-") {
+                parsed.url = token
+            }
+
+            i += 1
         }
+
         return parsed
+    }
+
+    private func tokenize(_ command: String) -> [String] {
+        var tokens: [String] = []
+        var current = ""
+        var inSingleQuote = false
+        var inDoubleQuote = false
+        var isEscaped = false
+
+        for char in command {
+            if isEscaped {
+                current.append(char)
+                isEscaped = false
+                continue
+            }
+
+            if char == "\\" && !inSingleQuote {
+                isEscaped = true
+                continue
+            }
+
+            if char == "'" && !inDoubleQuote {
+                inSingleQuote.toggle()
+                continue
+            }
+
+            if char == "\"" && !inSingleQuote {
+                inDoubleQuote.toggle()
+                continue
+            }
+
+            if (char.isWhitespace || char.isNewline) && !inSingleQuote && !inDoubleQuote {
+                if !current.isEmpty {
+                    tokens.append(current)
+                    current = ""
+                }
+                continue
+            }
+
+            current.append(char)
+        }
+
+        if !current.isEmpty {
+            tokens.append(current)
+        }
+
+        return tokens
     }
 
     private func sortedHeaderKeys(_ headers: [String: String]) -> [String] {

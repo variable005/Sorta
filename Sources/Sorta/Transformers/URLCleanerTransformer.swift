@@ -4,9 +4,15 @@ public struct URLCleanerTransformer: TransformerProtocol {
     public var category: ClipCategory { .url }
 
     private let trackingParameters: Set<String> = [
-        "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
-        "fbclid", "gclid", "si", "ref", "mc_cid", "mc_eid", "yclid", "msclkid",
-        "igshid", "_hsenc", "_hsmi", "mkt_tok"
+        // Standard UTM
+        "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "utm_id", "utm_source_platform",
+        // Social Media & Ad Click IDs
+        "fbclid", "gclid", "gclsrc", "dclid", "wbraid", "gbraid", "si", "ref", "ref_src", "ref_url",
+        "ttclid", "twclid", "igshid", "mc_cid", "mc_eid", "yclid", "msclkid",
+        // Email & Marketing Automation
+        "_hsenc", "_hsmi", "mkt_tok", "trk", "trkcampaign", "sc_campaign", "sc_channel",
+        // Platform Tracking
+        "s_cid", "feature", "share_id", "spm", "source", "adgroupid", "keyword", "gad_source"
     ]
 
     public init() {}
@@ -28,7 +34,7 @@ public struct URLCleanerTransformer: TransformerProtocol {
         var options: [TransformOption] = []
         var index = 1
 
-        // 1. Clean Tracking Parameters & Sort Remaining Parameters
+        // 1. Clean Tracking Parameters & Canonicalize
         if let queryItems = components.queryItems, !queryItems.isEmpty {
             let filteredItems = queryItems.filter { !trackingParameters.contains($0.name.lowercased()) }
             let sortedFiltered = sortQueryItems(filteredItems)
@@ -45,26 +51,10 @@ public struct URLCleanerTransformer: TransformerProtocol {
             }
         }
 
-        // 2. Sort Query Parameters (Canonical URL)
-        var sortComponents = getURLComponents(from: trimmed) ?? components
-        if let queryItems = sortComponents.queryItems, queryItems.count >= 2 {
-            let sortedItems = sortQueryItems(queryItems)
-            sortComponents.queryItems = sortedItems
-            if let sortedURLString = sortComponents.url?.absoluteString, sortedURLString != trimmed {
-                options.append(TransformOption(
-                    title: "Sort Query Parameters (Canonical URL)",
-                    detail: "Alphabetically sorts URL parameters",
-                    shortcutKey: "\(index)",
-                    transformedContent: sortedURLString
-                ))
-                index += 1
-            }
-        }
-
-        // 3. Decode URL Encoding
+        // 2. Decode URL Percent-Encoding
         if let decoded = trimmed.removingPercentEncoding, decoded != trimmed {
             options.append(TransformOption(
-                title: "Decode URL Encoding",
+                title: "Decode URL Percent-Encoding",
                 detail: decoded,
                 shortcutKey: "\(index)",
                 transformedContent: decoded
@@ -72,7 +62,7 @@ public struct URLCleanerTransformer: TransformerProtocol {
             index += 1
         }
 
-        // 4. Extract Host / Domain
+        // 3. Extract Host / Domain
         if let host = components.host {
             options.append(TransformOption(
                 title: "Extract Domain Host",
@@ -83,9 +73,9 @@ public struct URLCleanerTransformer: TransformerProtocol {
             index += 1
         }
 
-        // 5. Raw Copy
+        // 4. Raw Canonical Copy
         options.append(TransformOption(
-            title: "Original URL",
+            title: "Copy Clean URL",
             detail: trimmed,
             shortcutKey: "\(index)",
             transformedContent: trimmed

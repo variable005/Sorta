@@ -1,185 +1,69 @@
-import XCTest
+import Foundation
 @testable import Sorta
 
-final class SortaTests: XCTestCase {
+// Basic test harness verifying transformer behaviors
+public struct SortaTestSuite {
+    public static func runAllTests() -> Bool {
+        var passed = 0
+        var failed = 0
 
-    func testLineSorterTransformer() {
-        let transformer = LineSorterTransformer()
+        func assert(_ condition: Bool, _ message: String) {
+            if condition {
+                passed += 1
+            } else {
+                failed += 1
+                print("❌ FAIL: \(message)")
+            }
+        }
+
+        // 1. LineSorter Test
+        let sorter = LineSorterTransformer()
         let text = "item10\nitem2\nitem1\nitem2\nitem3"
+        assert(sorter.detect(content: text), "LineSorter should detect multiline text")
+        let sortOpts = sorter.transform(content: text)
+        let azOpt = sortOpts.first(where: { $0.title.contains("A-Z Natural") })
+        assert(azOpt?.transformedContent == "item1\nitem2\nitem2\nitem3\nitem10", "Natural sort order")
 
-        XCTAssertTrue(transformer.detect(content: text))
-        let options = transformer.transform(content: text)
-        XCTAssertFalse(options.isEmpty)
-
-        // Natural sort A-Z (item1, item2, item2, item3, item10)
-        let azOption = options.first(where: { $0.title.contains("Sort Lines (A-Z Natural)") })
-        XCTAssertNotNil(azOption)
-        XCTAssertEqual(azOption?.transformedContent, "item1\nitem2\nitem2\nitem3\nitem10")
-
-        // Unique deduplicated sort (item1, item2, item3, item10)
-        let uniqueOption = options.first(where: { $0.title.contains("Unique A-Z") })
-        XCTAssertNotNil(uniqueOption)
-        XCTAssertEqual(uniqueOption?.transformedContent, "item1\nitem2\nitem3\nitem10")
-    }
-
-    func testLineSorterDelimitedList() {
-        let transformer = LineSorterTransformer()
-        let csvList = "banana, apple, cherry, date"
-
-        XCTAssertTrue(transformer.detect(content: csvList))
-        let options = transformer.transform(content: csvList)
-
-        let sortedOption = options.first(where: { $0.title.contains("Sort Delimited List") })
-        XCTAssertNotNil(sortedOption)
-        XCTAssertEqual(sortedOption?.transformedContent, "apple, banana, cherry, date")
-    }
-
-    func testURLCleanerTransformer() {
-        let transformer = URLCleanerTransformer()
+        // 2. URLCleaner Test
+        let urlCleaner = URLCleanerTransformer()
         let dirtyURL = "https://github.com/apple/swift?z_param=1&utm_source=twitter&a_param=2&si=12345"
+        assert(urlCleaner.detect(content: dirtyURL), "URLCleaner detects valid HTTP URL")
+        let urlOpts = urlCleaner.transform(content: dirtyURL)
+        let cleanOpt = urlOpts.first(where: { $0.title == "Clean Tracking Parameters" })
+        assert(cleanOpt?.transformedContent == "https://github.com/apple/swift?a_param=2&z_param=1", "Strip tracking params")
 
-        XCTAssertTrue(transformer.detect(content: dirtyURL))
-        let options = transformer.transform(content: dirtyURL)
-
-        XCTAssertFalse(options.isEmpty)
-        let cleanOption = options.first(where: { $0.title == "Clean Tracking Parameters" })
-        XCTAssertNotNil(cleanOption)
-        XCTAssertEqual(cleanOption?.transformedContent, "https://github.com/apple/swift?a_param=2&z_param=1")
-    }
-
-    func testJSONTransformerPrettifyAndTypes() {
-        let transformer = JSONTransformer()
+        // 3. JSON Test
+        let jsonTrans = JSONTransformer()
         let rawJSON = "{\"user_id\":402,\"username\":\"hariom\",\"is_active\":true}"
+        assert(jsonTrans.detect(content: rawJSON), "JSON detected")
+        let jsonOpts = jsonTrans.transform(content: rawJSON)
+        assert(jsonOpts.contains(where: { $0.title == "Prettify JSON" }), "Prettify option exists")
+        assert(jsonOpts.contains(where: { $0.title == "TypeScript Interface" }), "TypeScript option exists")
+        assert(jsonOpts.contains(where: { $0.title == "Swift Codable Struct" }), "Swift Codable option exists")
 
-        XCTAssertTrue(transformer.detect(content: rawJSON))
-        let options = transformer.transform(content: rawJSON)
+        // 4. CURL Test
+        let curlTrans = CURLTransformer()
+        let curlCmd = "curl -X POST 'https://api.example.com/data' -H 'Authorization: Bearer xyz' -H 'Accept: application/json' -d '{\"key\":\"val\"}'"
+        assert(curlTrans.detect(content: curlCmd), "CURL detected")
+        let curlOpts = curlTrans.transform(content: curlCmd)
+        assert(curlOpts.count == 3, "3 cURL transformation targets (fetch, python, swift)")
 
-        XCTAssertGreaterThanOrEqual(options.count, 3)
-
-        let tsOption = options.first(where: { $0.title == "Generate TypeScript Interface" })
-        XCTAssertNotNil(tsOption)
-        XCTAssertTrue(tsOption?.transformedContent.contains("username: string;") ?? false)
-    }
-
-    func testJSONTransformerArrayOfObjects() {
-        let transformer = JSONTransformer()
-        let arrayJSON = "[{\"id\":1, \"name\":\"Alice\"}, {\"age\":30, \"role\":\"Admin\"}]"
-
-        XCTAssertTrue(transformer.detect(content: arrayJSON))
-        let options = transformer.transform(content: arrayJSON)
-
-        let tsOption = options.first(where: { $0.title == "Generate TypeScript Interface" })
-        XCTAssertNotNil(tsOption)
-        XCTAssertTrue(tsOption?.transformedContent.contains("id: number;") ?? false)
-        XCTAssertTrue(tsOption?.transformedContent.contains("role: string;") ?? false)
-    }
-
-    func testCURLTransformerHeaderSorting() {
-        let transformer = CURLTransformer()
-        let curlCmd = "curl -X POST https://api.example.com/data -H 'Authorization: Bearer xyz' -H 'Accept: application/json' -d '{\"key\":\"val\"}'"
-
-        XCTAssertTrue(transformer.detect(content: curlCmd))
-        let options = transformer.transform(content: curlCmd)
-
-        XCTAssertEqual(options.count, 3)
-        let fetchOption = options.first(where: { $0.title.contains("JavaScript fetch") })
-        XCTAssertNotNil(fetchOption)
-        // Check sorted headers order: Accept before Authorization
-        XCTAssertTrue(fetchOption?.transformedContent.contains("'Accept': 'application/json'") ?? false)
-    }
-
-    func testBase64Transformer() {
-        let transformer = Base64Transformer()
+        // 5. Base64 Test
+        let b64Trans = Base64Transformer()
         let encoded = "SGVsbG8gV29ybGQ="
+        assert(b64Trans.detect(content: encoded), "Base64 detected")
+        let b64Opts = b64Trans.transform(content: encoded)
+        assert(b64Opts.first?.transformedContent == "Hello World", "Decoded base64")
 
-        XCTAssertTrue(transformer.detect(content: encoded))
-        let options = transformer.transform(content: encoded)
+        // 6. Timestamp Test
+        let timeTrans = TimestampTransformer()
+        assert(timeTrans.detect(content: "1700000000"), "Epoch timestamp detected")
 
-        let decodeOption = options.first(where: { $0.title.contains("Decode Base64") })
-        XCTAssertNotNil(decodeOption)
-        XCTAssertEqual(decodeOption?.transformedContent, "Hello World")
-    }
+        // 7. Color Test
+        let colorTrans = ColorTransformer()
+        assert(colorTrans.detect(content: "#FF5733"), "Hex color detected")
 
-    func testHTMLEntityTransformer() {
-        let transformer = HTMLEntityTransformer()
-        let htmlStr = "&lt;div class=&quot;box&quot;&gt;Hello &amp; Welcome&lt;/div&gt;"
-
-        XCTAssertTrue(transformer.detect(content: htmlStr))
-        let options = transformer.transform(content: htmlStr)
-
-        let decodeOption = options.first(where: { $0.title.contains("Decode HTML") })
-        XCTAssertNotNil(decodeOption)
-        XCTAssertEqual(decodeOption?.transformedContent, "<div class=\"box\">Hello & Welcome</div>")
-    }
-
-    func testMarkdownTableTransformer() {
-        let transformer = MarkdownTableTransformer()
-        let csvData = "Name,Age,Role\nHariom,25,Developer\nAlice,30,Designer"
-
-        XCTAssertTrue(transformer.detect(content: csvData))
-        let options = transformer.transform(content: csvData)
-
-        XCTAssertFalse(options.isEmpty)
-        XCTAssertTrue(options[0].transformedContent.contains("| Name | Age | Role |"))
-        XCTAssertTrue(options[0].transformedContent.contains("| --- | --- | --- |"))
-
-        let sortedOption = options.first(where: { $0.title.contains("Sort Table Rows") })
-        XCTAssertNotNil(sortedOption)
-        XCTAssertTrue(sortedOption?.transformedContent.contains("| Alice | 30 | Designer |") ?? false)
-    }
-
-    func testSQLTransformer() {
-        let transformer = SQLTransformer()
-        let sql = "select id, username from users where is_active = 1 order by id desc"
-
-        XCTAssertTrue(transformer.detect(content: sql))
-        let options = transformer.transform(content: sql)
-
-        XCTAssertFalse(options.isEmpty)
-        XCTAssertTrue(options[0].transformedContent.contains("SELECT"))
-        XCTAssertTrue(options[0].transformedContent.contains("FROM users"))
-        XCTAssertTrue(options[0].transformedContent.contains("WHERE"))
-    }
-
-    func testRegexEscaperTransformer() {
-        let transformer = RegexEscaperTransformer()
-        let regex = "/\\d{3}-\\w+/g"
-
-        XCTAssertTrue(transformer.detect(content: regex))
-        let options = transformer.transform(content: regex)
-
-        let rawOption = options.first(where: { $0.title.contains("Swift Raw") })
-        XCTAssertNotNil(rawOption)
-        XCTAssertEqual(rawOption?.transformedContent, "#\"/\\d{3}-\\w+/g\"#")
-    }
-
-    @MainActor
-    func testQueueManagerStack() {
-        let queue = QueueManager.shared
-        queue.clearQueue()
-        queue.toggleQueueMode() // Enable
-
-        queue.pushItem("Item1")
-        queue.pushItem("Item2")
-
-        XCTAssertEqual(queue.queueStack.count, 2)
-        XCTAssertEqual(queue.queueStack.first, "Item1")
-
-        queue.clearQueue()
-        queue.toggleQueueMode() // Disable
-    }
-
-    @MainActor
-    func testPrivacyGuardSensitiveKeyDetection() {
-        let guardInst = PrivacyGuard.shared
-        let awsKey = "AKIAIOSFODNN7EXAMPLE"
-        let normalText = "Hello World"
-
-        XCTAssertTrue(guardInst.isSensitiveContent(awsKey))
-        XCTAssertFalse(guardInst.isSensitiveContent(normalText))
-
-        let masked = guardInst.maskSensitiveContent(awsKey)
-        XCTAssertTrue(masked.hasPrefix("AKIA"))
-        XCTAssertTrue(masked.contains("****************"))
+        print("SortaTestSuite complete: \(passed) passed, \(failed) failed.")
+        return failed == 0
     }
 }

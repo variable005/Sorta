@@ -1,44 +1,47 @@
 import SwiftUI
+import AppKit
 
 public struct SortaHUDView: View {
     @ObservedObject var watcher: PasteboardWatcher
-    @ObservedObject var queueManager = QueueManager.shared
+    @StateObject private var viewModel: HUDViewModel
 
     public init(watcher: PasteboardWatcher) {
         self.watcher = watcher
+        self._viewModel = StateObject(wrappedValue: HUDViewModel(watcher: watcher))
     }
 
     public var body: some View {
         VStack(spacing: 0) {
-            // Header Search Bar & Brand Title
+            // Header Search Bar & Controls
             HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(.secondary)
                     .font(.system(size: 14))
 
-                TextField("Search history or filter actions...", text: $watcher.searchQuery)
+                TextField("Search history or type to filter...", text: $viewModel.searchQuery)
                     .textFieldStyle(.plain)
                     .font(.system(size: 13))
 
                 Spacer()
 
-                if queueManager.isQueueModeEnabled {
-                    Text("QUEUE STACK (\(queueManager.queueStack.count))")
-                        .font(.system(size: 10, weight: .bold, design: .monospaced))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background(Color.orange.opacity(0.2))
-                        .foregroundColor(.orange)
-                        .cornerRadius(4)
+                if !viewModel.searchQuery.isEmpty {
+                    Button(action: { viewModel.searchQuery = "" }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.secondary)
+                            .font(.system(size: 12))
+                    }
+                    .buttonStyle(.plain)
                 }
 
-                Text("SORTA")
-                    .font(.system(size: 10, weight: .black, design: .monospaced))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 3)
-                    .background(Color.blue.opacity(0.2))
-                    .foregroundColor(.blue)
-                    .cornerRadius(4)
+                HStack(spacing: 4) {
+                    Text("esc")
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(Color.primary.opacity(0.08))
+                        .cornerRadius(4)
+                        .foregroundColor(.secondary)
+                }
             }
             .padding(14)
             .background(Color.primary.opacity(0.03))
@@ -47,55 +50,13 @@ public struct SortaHUDView: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    // Queue Banner if Queue items exist
-                    if queueManager.isQueueModeEnabled && !queueManager.queueStack.isEmpty {
-                        VStack(alignment: .leading, spacing: 6) {
-                            HStack {
-                                Text("SEQUENTIAL QUEUE STACK")
-                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                    .foregroundColor(.orange)
-
-                                Spacer()
-
-                                Button("Clear Queue") {
-                                    queueManager.clearQueue()
-                                }
-                                .buttonStyle(.plain)
-                                .font(.system(size: 10))
-                                .foregroundColor(.secondary)
-                            }
-
-                            ForEach(Array(queueManager.queueStack.enumerated()), id: \.offset) { idx, item in
-                                HStack {
-                                    Text("\(idx + 1)")
-                                        .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                        .foregroundColor(.orange)
-                                        .frame(width: 16)
-
-                                    Text(item)
-                                        .font(.system(size: 11, design: .monospaced))
-                                        .lineLimit(1)
-                                        .foregroundColor(.primary)
-                                }
-                                .padding(6)
-                                .background(Color.orange.opacity(0.06))
-                                .cornerRadius(4)
-                            }
-                        }
-                        Divider()
-                    }
-
-                    // Current Item Preview Section
+                    // Current Clipboard Preview
                     if let item = watcher.currentItem {
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Label(watcher.currentCategory.rawValue, systemImage: watcher.currentCategory.systemImageName)
                                     .font(.system(size: 11, weight: .bold, design: .monospaced))
                                     .foregroundColor(.blue)
-
-                                Text("• \(watcher.currentCategory.domain.rawValue)")
-                                    .font(.system(size: 9, weight: .medium))
-                                    .foregroundColor(.secondary)
 
                                 Spacer()
 
@@ -119,12 +80,20 @@ public struct SortaHUDView: View {
                         }
                     }
 
-                    // Smart Actions Section
-                    if !watcher.currentOptions.isEmpty {
+                    // Smart Actions (Direct 1..9 Execution)
+                    if !watcher.currentOptions.isEmpty && viewModel.searchQuery.isEmpty {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("SMART TRANSFORMATIONS (PRESS NUMBER KEY)")
-                                .font(.system(size: 10, weight: .bold, design: .monospaced))
-                                .foregroundColor(.secondary)
+                            HStack {
+                                Text("SMART ACTIONS")
+                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                    .foregroundColor(.secondary)
+
+                                Spacer()
+
+                                Text("PRESS 1–\(watcher.currentOptions.count) TO PASTE")
+                                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                                    .foregroundColor(.blue)
+                            }
 
                             VStack(spacing: 4) {
                                 ForEach(watcher.currentOptions) { option in
@@ -139,23 +108,19 @@ public struct SortaHUDView: View {
 
                     Divider()
 
-                    // History Section
+                    // Clipboard History
                     HistoryListView(
+                        viewModel: viewModel,
                         watcher: watcher
                     ) { selectedItem in
-                        let pasteboardOption = TransformOption(
-                            title: "Paste Raw",
-                            detail: selectedItem.rawContent,
-                            transformedContent: selectedItem.rawContent
-                        )
-                        watcher.applyTransformAndPaste(option: pasteboardOption)
+                        watcher.pasteRawItem(selectedItem)
                         PanelManager.shared.hidePanel()
                     }
                 }
                 .padding(14)
             }
         }
-        .frame(width: 560, height: 420)
+        .frame(width: 580, height: 440)
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .fill(.ultraThinMaterial)
@@ -165,5 +130,54 @@ public struct SortaHUDView: View {
                 )
         )
         .clipShape(RoundedRectangle(cornerRadius: 16))
+        .background(
+            KeyEventHandlerView { event in
+                return viewModel.handleKeyDown(event: event)
+            }
+        )
+    }
+}
+
+/// Helper NSView to intercept key events cleanly in the HUD
+struct KeyEventHandlerView: NSViewRepresentable {
+    let onKeyDown: (NSEvent) -> Bool
+
+    func makeNSView(context: Context) -> KeyInterceptingView {
+        let view = KeyInterceptingView()
+        view.onKeyDown = onKeyDown
+        return view
+    }
+
+    func updateNSView(_ nsView: KeyInterceptingView, context: Context) {
+        nsView.onKeyDown = onKeyDown
+    }
+
+    class KeyInterceptingView: NSView {
+        var onKeyDown: ((NSEvent) -> Bool)?
+        private var monitor: Any?
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            if window != nil && monitor == nil {
+                monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+                    guard let self = self, let handler = self.onKeyDown else { return event }
+                    if handler(event) {
+                        return nil // Handled!
+                    }
+                    return event
+                }
+            } else if window == nil && monitor != nil {
+                if let m = monitor {
+                    NSEvent.removeMonitor(m)
+                    monitor = nil
+                }
+            }
+        }
+
+        deinit {
+            if let m = monitor {
+                NSEvent.removeMonitor(m)
+            }
+        }
     }
 }

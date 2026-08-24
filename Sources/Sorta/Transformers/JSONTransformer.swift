@@ -34,7 +34,7 @@ public struct JSONTransformer: TransformerProtocol {
            let prettyString = String(data: prettyData, encoding: .utf8) {
             options.append(TransformOption(
                 title: "Prettify JSON",
-                detail: "Formatted JSON with 2-space indentation and sorted keys",
+                detail: "Formatted with 2-space indentation & sorted keys",
                 shortcutKey: "\(index)",
                 transformedContent: prettyString
             ))
@@ -46,7 +46,7 @@ public struct JSONTransformer: TransformerProtocol {
            let minifyString = String(data: minifyData, encoding: .utf8) {
             options.append(TransformOption(
                 title: "Minify JSON",
-                detail: "Single line compact JSON string",
+                detail: "Single line compact representation",
                 shortcutKey: "\(index)",
                 transformedContent: minifyString
             ))
@@ -72,25 +72,24 @@ public struct JSONTransformer: TransformerProtocol {
         }()
 
         if let dict = dictionaryRepresentation {
-            // 3. TypeScript Interface with sorted keys
+            // 3. TypeScript Interface
             let tsInterface = generateTypeScriptType(from: dict, name: "GeneratedType")
             options.append(TransformOption(
-                title: "Generate TypeScript Interface",
+                title: "TypeScript Interface",
                 detail: "interface GeneratedType { ... }",
                 shortcutKey: "\(index)",
                 transformedContent: tsInterface
             ))
             index += 1
 
-            // 4. Swift Codable Struct with sorted keys
+            // 4. Swift Codable Struct
             let swiftStruct = generateSwiftStruct(from: dict, name: "GeneratedItem")
             options.append(TransformOption(
-                title: "Generate Swift Codable Struct",
+                title: "Swift Codable Struct",
                 detail: "struct GeneratedItem: Codable { ... }",
                 shortcutKey: "\(index)",
                 transformedContent: swiftStruct
             ))
-            index += 1
         }
 
         return options
@@ -114,7 +113,11 @@ public struct JSONTransformer: TransformerProtocol {
         case is String: return "string"
         case is Int, is Double, is Float: return "number"
         case is Bool: return "boolean"
-        case is [Any]: return "any[]"
+        case let arr as [Any]:
+            if let first = arr.first {
+                return "\(typeNameForTS(first))[]"
+            }
+            return "any[]"
         case is [String: Any]: return "Record<string, any>"
         default: return "any"
         }
@@ -139,8 +142,12 @@ public struct JSONTransformer: TransformerProtocol {
         case is Int: return "Int"
         case is Double, is Float: return "Double"
         case is Bool: return "Bool"
-        case is [Any]: return "[AnyCodable]"
-        case is [String: Any]: return "[String: AnyCodable]"
+        case let arr as [Any]:
+            if let first = arr.first {
+                return "[\(typeNameForSwift(first))]"
+            }
+            return "[String]"
+        case is [String: Any]: return "[String: String]"
         default: return "String"
         }
     }

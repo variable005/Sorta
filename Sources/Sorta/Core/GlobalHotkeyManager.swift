@@ -10,52 +10,26 @@ public final class GlobalHotkeyManager {
 
     public init() {}
 
-    public func registerHotkey(onTriggerPanel: @escaping () -> Void) {
+    public func registerHotkey(onTogglePanel: @escaping () -> Void) {
+        // Global monitor (fires when Sorta is NOT the active app)
         globalMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { event in
-            let modifiers = event.modifierFlags
+            let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
 
-            // Option + Space (keyCode 49) -> Toggle Panel
-            if modifiers.contains(.option) && !modifiers.contains(.shift) && event.keyCode == 49 {
+            // Option + Space (keyCode 49) -> Toggle HUD Panel
+            if modifiers == .option && event.keyCode == 49 {
                 Task { @MainActor in
-                    onTriggerPanel()
-                }
-            }
-
-            // Option + Shift + C (keyCode 8) -> Toggle Queue Mode
-            if modifiers.contains(.option) && modifiers.contains(.shift) && event.keyCode == 8 {
-                Task { @MainActor in
-                    QueueManager.shared.toggleQueueMode()
-                }
-            }
-
-            // Option + Shift + V (keyCode 9) -> Pop and paste next queue item
-            if modifiers.contains(.option) && modifiers.contains(.shift) && event.keyCode == 9 {
-                Task { @MainActor in
-                    _ = QueueManager.shared.popAndPaste()
+                    onTogglePanel()
                 }
             }
         }
 
+        // Local monitor (fires when Sorta HUD is active/key)
         localMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            let modifiers = event.modifierFlags
+            let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
 
-            if modifiers.contains(.option) && !modifiers.contains(.shift) && event.keyCode == 49 {
+            if modifiers == .option && event.keyCode == 49 {
                 Task { @MainActor in
-                    onTriggerPanel()
-                }
-                return nil
-            }
-
-            if modifiers.contains(.option) && modifiers.contains(.shift) && event.keyCode == 8 {
-                Task { @MainActor in
-                    QueueManager.shared.toggleQueueMode()
-                }
-                return nil
-            }
-
-            if modifiers.contains(.option) && modifiers.contains(.shift) && event.keyCode == 9 {
-                Task { @MainActor in
-                    _ = QueueManager.shared.popAndPaste()
+                    onTogglePanel()
                 }
                 return nil
             }

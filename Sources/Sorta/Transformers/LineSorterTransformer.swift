@@ -40,7 +40,7 @@ public struct LineSorterTransformer: TransformerProtocol {
             if azContent != content {
                 options.append(TransformOption(
                     title: "Sort Lines (A-Z Natural)",
-                    detail: "Alphabetical & natural numerical order (item2 before item10)",
+                    detail: "Natural alphabetical & numerical order",
                     shortcutKey: "\(index)",
                     transformedContent: azContent
                 ))
@@ -53,7 +53,7 @@ public struct LineSorterTransformer: TransformerProtocol {
             if zaContent != content {
                 options.append(TransformOption(
                     title: "Sort Lines (Z-A Reverse)",
-                    detail: "Reverse natural alphabetical order",
+                    detail: "Reverse natural order",
                     shortcutKey: "\(index)",
                     transformedContent: zaContent
                 ))
@@ -73,13 +73,13 @@ public struct LineSorterTransformer: TransformerProtocol {
             let uniqueContent = uniqueLines.joined(separator: "\n")
             options.append(TransformOption(
                 title: "Sort & Deduplicate (Unique A-Z)",
-                detail: "Removes duplicates and sorts remaining lines (\(uniqueLines.count) items)",
+                detail: "Removes duplicates (\(uniqueLines.count) unique lines)",
                 shortcutKey: "\(index)",
                 transformedContent: uniqueContent
             ))
             index += 1
 
-            // 4. Sort by Line Length (Shortest -> Longest)
+            // 4. Sort by Line Length
             let sortedByLength = lines.sorted { l1, l2 in
                 if l1.count != l2.count {
                     return l1.count < l2.count
@@ -90,31 +90,10 @@ public struct LineSorterTransformer: TransformerProtocol {
             if lengthContent != content && lengthContent != azContent {
                 options.append(TransformOption(
                     title: "Sort by Line Length",
-                    detail: "Shortest to longest lines with natural tie-breaker",
+                    detail: "Shortest to longest lines",
                     shortcutKey: "\(index)",
                     transformedContent: lengthContent
                 ))
-                index += 1
-            }
-
-            // 5. Numeric Value Sort (if numeric values exist)
-            let parsedNumerics = lines.compactMap { line -> (Double, String)? in
-                if let val = extractNumericValue(from: line) {
-                    return (val, line)
-                }
-                return nil
-            }
-            if parsedNumerics.count == lines.count {
-                let sortedNumeric = parsedNumerics.sorted { $0.0 < $1.0 }.map { $0.1 }
-                let numericContent = sortedNumeric.joined(separator: "\n")
-                if numericContent != azContent {
-                    options.append(TransformOption(
-                        title: "Sort Numerically",
-                        detail: "Sorts lines by extracted numeric values",
-                        shortcutKey: "\(index)",
-                        transformedContent: numericContent
-                    ))
-                }
             }
         } else {
             // Delimited inline list sorting
@@ -126,7 +105,7 @@ public struct LineSorterTransformer: TransformerProtocol {
                     let sortedList = sortedItems.joined(separator: "\(delimiter) ")
                     options.append(TransformOption(
                         title: "Sort Delimited List (A-Z)",
-                        detail: "Sorts inline list delimited by '\(delimiter)'",
+                        detail: "Alphabetizes inline list separated by '\(delimiter)'",
                         shortcutKey: "\(index)",
                         transformedContent: sortedList
                     ))
@@ -152,16 +131,5 @@ public struct LineSorterTransformer: TransformerProtocol {
             .replacingOccurrences(of: "\u{200C}", with: "")
             .replacingOccurrences(of: "\u{200D}", with: "")
             .replacingOccurrences(of: "\u{FEFF}", with: "")
-    }
-
-    private func extractNumericValue(from string: String) -> Double? {
-        let pattern = "[-+]?[0-9]*\\.?[0-9]+"
-        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
-        let range = NSRange(location: 0, length: string.utf16.count)
-        if let match = regex.firstMatch(in: string, options: [], range: range),
-           let matchRange = Range(match.range, in: string) {
-            return Double(string[matchRange])
-        }
-        return nil
     }
 }

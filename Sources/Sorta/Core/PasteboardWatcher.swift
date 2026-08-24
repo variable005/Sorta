@@ -8,77 +8,24 @@ public final class PasteboardWatcher: ObservableObject {
     @Published public private(set) var currentCategory: ClipCategory = .text
     @Published public private(set) var currentOptions: [TransformOption] = []
     @Published public private(set) var history: [ClipItem] = []
-    @Published public var searchQuery: String = ""
-    @Published public var selectedCategory: ClipCategory? = nil
-    @Published public var isGroupedByCategory: Bool = false
-    @Published public var isFilterPinnedOnly: Bool = false
 
-    private let storageKey = "Sorta_ClipboardHistory_v1"
+    private let storageKey = "Sorta_ClipboardHistory_v2"
+    private var lastChangeCount: Int = -1
+    private var timer: Timer?
 
     public var pinnedItems: [ClipItem] {
         history.filter { $0.isPinned }
-    }
-
-    public var categorizedHistory: [ClipCategory: [ClipItem]] {
-        Dictionary(grouping: history) { $0.category }
-    }
-
-    public var categoriesInHistory: [ClipCategory] {
-        let present = Set(history.map { $0.category })
-        return ClipCategory.allCases.filter { present.contains($0) }
-    }
-
-    public var filteredHistory: [ClipItem] {
-        history.filter { item in
-            let matchesPinned = !isFilterPinnedOnly || item.isPinned
-            let matchesCategory = selectedCategory == nil || item.category == selectedCategory
-            let matchesSearch = searchQuery.isEmpty || item.rawContent.localizedCaseInsensitiveContains(searchQuery)
-            return matchesPinned && matchesCategory && matchesSearch
-        }
     }
 
     public init() {
         loadState()
     }
 
-    public func togglePin(item: ClipItem) {
-        if let idx = history.firstIndex(where: { $0.id == item.id }) {
-            history[idx].isPinned.toggle()
-            saveState()
-        }
-    }
-
-    public func clearHistory(preservePinned: Bool = true) {
-        if preservePinned {
-            history = history.filter { $0.isPinned }
-        } else {
-            history.removeAll()
-        }
-        saveState()
-    }
-
-    private func saveState() {
-        if let data = try? JSONEncoder().encode(history) {
-            UserDefaults.standard.set(data, forKey: storageKey)
-        }
-    }
-
-    private func loadState() {
-        if let data = UserDefaults.standard.data(forKey: storageKey),
-           let saved = try? JSONDecoder().decode([ClipItem].self, from: data) {
-            self.history = saved
-        }
-    }
-
-
-    private var lastChangeCount: Int = -1
-    private var timer: Timer?
-
     public func startMonitoring() {
         lastChangeCount = NSPasteboard.general.changeCount
         checkPasteboard()
 
-        timer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 self?.checkPasteboard()
             }
@@ -95,7 +42,7 @@ public final class PasteboardWatcher: ObservableObject {
         guard pasteboard.changeCount != lastChangeCount else { return }
         lastChangeCount = pasteboard.changeCount
 
-        // 1. App Exclusion Check (Ignore 1Password, Bitwarden, Keychain, KeePass)
+        // 1. Password manager exclusion
         if PrivacyGuard.shared.isFromIgnoredApplication() {
             return
         }
@@ -104,21 +51,19 @@ public final class PasteboardWatcher: ObservableObject {
             return
         }
 
-        // 2. Queue Mode Handling
-        if QueueManager.shared.isQueueModeEnabled {
-            QueueManager.shared.pushItem(newString)
-        }
-
-        // 3. Sensitive Data Check (Mask in history & auto-expire in 30 seconds)
+        // 2. Sensitive Data Handling
         let isSensitive = PrivacyGuard.shared.isSensitiveContent(newString)
         let displayContent = isSensitive ? PrivacyGuard.shared.maskSensitiveContent(newString) : newString
 
         if isSensitive {
-            PrivacyGuard.shared.scheduleAutoExpiry(seconds: 30.0) { [weak self] in
-                self?.currentItem = nil
+            PrivacyGuard.shared.scheduleAutoExpiry(for: newString, seconds: 30.0) { [weak self] in
+                if self?.currentItem?.rawContent == displayContent {
+                    self?.currentItem = nil
+                }
             }
         }
 
+        // 3. Inspect and classify
         let (category, options) = TransformerRegistry.shared.inspect(content: newString)
 
         let newItem = ClipItem(
@@ -131,6 +76,7 @@ public final class PasteboardWatcher: ObservableObject {
         self.currentCategory = category
         self.currentOptions = options
 
+        // 4. Update History (Deduplicate consecutive identical items)
         if history.first?.rawContent != displayContent {
             history.insert(newItem, at: 0)
             if history.count > 50 {
@@ -140,18 +86,42 @@ public final class PasteboardWatcher: ObservableObject {
         }
     }
 
-    public func applyTransformAndPaste(option: TransformOption) {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(option.transformedContent, forType: .string)
+    public func togglePin(item: ClipItem) {
+        if let idx = history.firstIndex(where: { $0.id == item.id }) {
+            history[idx].isPinned.toggle()
+            saveState()
+        }
+    }
 
-        lastChangeCount = pasteboard.changeCount
+    public func delete(item: ClipItem) {
+        if let idx = history.firstIndex(where: { $0.id == item.id }) {
+            history.remove(at: idx)
+            saveState()
+        }
+    }
+
+    public func clearHistory(preservePinned: Bool = true) {
+        if preservePinned {
+            history = history.filter { $0.isPinned }
+        } else {
+            history.removeAll()
+        }
+        saveState()
+    }
+
+    public func applyTransformAndPaste(option: TransformOption) {
+        copyToClipboard(content: option.transformedContent)
 
         if var item = currentItem {
             item.lastTransformedContent = option.transformedContent
             self.currentItem = item
         }
 
+        simulateCmdV()
+    }
+
+    public func pasteRawItem(_ item: ClipItem) {
+        copyToClipboard(content: item.rawContent)
         simulateCmdV()
     }
 
@@ -164,7 +134,7 @@ public final class PasteboardWatcher: ObservableObject {
 
     private func simulateCmdV() {
         let src = CGEventSource(stateID: .combinedSessionState)
-        let vKeyCode: CGKeyCode = 0x09
+        let vKeyCode: CGKeyCode = 0x09 // Virtual key for 'V'
 
         let keyDown = CGEvent(keyboardEventSource: src, virtualKey: vKeyCode, keyDown: true)
         keyDown?.flags = .maskCommand
@@ -174,5 +144,18 @@ public final class PasteboardWatcher: ObservableObject {
 
         keyDown?.post(tap: .cghidEventTap)
         keyUp?.post(tap: .cghidEventTap)
+    }
+
+    private func saveState() {
+        if let data = try? JSONEncoder().encode(history) {
+            UserDefaults.standard.set(data, forKey: storageKey)
+        }
+    }
+
+    private func loadState() {
+        if let data = UserDefaults.standard.data(forKey: storageKey),
+           let saved = try? JSONDecoder().decode([ClipItem].self, from: data) {
+            self.history = saved
+        }
     }
 }
