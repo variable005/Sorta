@@ -106,6 +106,7 @@ public struct SortaHUDView: View {
                                 if !viewModel.isSidebarVisible && viewModel.isHovering {
                                     Text("History")
                                         .font(.system(size: 11, weight: .medium))
+                                        .lineLimit(1)
                                 }
                             }
                             .foregroundColor(viewModel.isSidebarVisible ? .primary : .secondary)
@@ -115,6 +116,7 @@ public struct SortaHUDView: View {
                             .cornerRadius(5)
                         }
                         .buttonStyle(.plain)
+                        .fixedSize()
 
                         // Category Badge
                         HStack(spacing: 5) {
@@ -125,35 +127,41 @@ public struct SortaHUDView: View {
                             Text(item.isImage ? "Images (\(imageHistory.count))" : item.category.rawValue)
                                 .font(.system(size: 11, weight: .semibold))
                                 .foregroundColor(.primary)
+                                .lineLimit(1)
                         }
                         .padding(.horizontal, 7)
                         .padding(.vertical, 3)
                         .background(Color.white.opacity(0.08))
                         .cornerRadius(5)
+                        .fixedSize()
 
                         // Stats
                         if item.isImage {
                             Text(formatImageStats(item))
                                 .font(.system(size: 10, weight: .regular))
                                 .foregroundColor(.secondary)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
                         } else {
                             Text("\(item.rawContent.count) chars • \(item.rawContent.components(separatedBy: .newlines).count) lines")
                                 .font(.system(size: 10, weight: .regular))
                                 .foregroundColor(.secondary)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
                         }
 
-                        Spacer()
+                        Spacer(minLength: 12)
 
-                        // Minimal Action Options (Visible only on Mouse Hover!)
+                        // Minimal Action Options (Always strictly single line with fixed width)
                         HStack(spacing: 6) {
                             // Star / Pin
                             Button(action: {
                                 watcher.togglePin(item: item)
                             }) {
                                 Image(systemName: item.isPinned ? "star.fill" : "star")
-                                    .font(.system(size: 12))
+                                    .font(.system(size: 11))
                                     .foregroundColor(item.isPinned ? .yellow : .secondary)
-                                    .padding(5)
+                                    .frame(width: 24, height: 24)
                                     .background(Color.white.opacity(0.08))
                                     .cornerRadius(5)
                             }
@@ -169,6 +177,7 @@ public struct SortaHUDView: View {
                                         .font(.system(size: 10))
                                     Text("Copy")
                                         .font(.system(size: 11, weight: .medium))
+                                        .lineLimit(1)
                                 }
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
@@ -187,6 +196,7 @@ public struct SortaHUDView: View {
                                         .font(.system(size: 10, weight: .bold))
                                     Text("Paste")
                                         .font(.system(size: 11, weight: .bold))
+                                        .lineLimit(1)
                                 }
                                 .foregroundColor(.black)
                                 .padding(.horizontal, 9)
@@ -196,6 +206,7 @@ public struct SortaHUDView: View {
                             }
                             .buttonStyle(.plain)
                         }
+                        .fixedSize(horizontal: true, vertical: false)
                         .opacity(viewModel.isHovering ? 1.0 : 0.0)
                         .animation(.easeInOut(duration: 0.15), value: viewModel.isHovering)
                     }
@@ -257,6 +268,7 @@ public struct SortaHUDView: View {
                                         Text(dims)
                                             .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
                                             .foregroundColor(.white.opacity(0.9))
+                                            .lineLimit(1)
                                     }
                                     if let count = item.imageData?.count {
                                         Text("•")
@@ -265,12 +277,14 @@ public struct SortaHUDView: View {
                                         Text("\(count / 1024) KB")
                                             .font(.system(size: 10))
                                             .foregroundColor(.secondary)
+                                            .lineLimit(1)
                                     }
                                 }
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 4)
                                 .background(Color.white.opacity(0.06))
                                 .cornerRadius(6)
+                                .fixedSize()
                             }
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .padding(20)
@@ -299,6 +313,7 @@ public struct SortaHUDView: View {
                         Text(formattedFullDate(item.createdAt))
                             .font(.system(size: 10))
                             .foregroundColor(.secondary.opacity(0.8))
+                            .lineLimit(1)
 
                         Spacer()
 
@@ -308,6 +323,7 @@ public struct SortaHUDView: View {
                             KeyboardBadge(key: "Tab", label: "History")
                             KeyboardBadge(key: "esc", label: "Close")
                         }
+                        .fixedSize()
                         .opacity(viewModel.isHovering ? 1.0 : 0.4)
                     }
                     .padding(.horizontal, 14)
@@ -475,7 +491,9 @@ struct KeyboardBadge: View {
             Text(label)
                 .font(.system(size: 9.5))
                 .foregroundColor(.secondary)
+                .lineLimit(1)
         }
+        .fixedSize()
     }
 }
 
