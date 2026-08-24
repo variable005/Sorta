@@ -27,12 +27,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Setup menu bar icon
         MenuBarManager.shared.setup(watcher: watcher)
 
-        // Register global shortcut listener
+        // Register global shortcut listener (Triple Control or Option+Space)
         GlobalHotkeyManager.shared.registerHotkey {
             PanelManager.shared.togglePanel()
         }
 
-        print("SORTA loaded successfully. Press Option + Space to open HUD.")
+        print("SORTA loaded successfully. Tap Control 3x (or Option + Space) to open HUD.")
     }
 
     func applicationWillTerminate(_ notification: Notification) {

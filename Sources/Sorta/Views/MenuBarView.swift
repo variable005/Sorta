@@ -25,7 +25,7 @@ public final class MenuBarManager: ObservableObject {
         let menu = NSMenu()
 
         let toggleItem = NSMenuItem(
-            title: "Toggle SORTA Panel",
+            title: "Toggle SORTA Panel (Tap Control 3x)",
             action: #selector(togglePanel),
             keyEquivalent: ""
         )

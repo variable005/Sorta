@@ -46,7 +46,7 @@ SORTA transforms your macOS clipboard from a passive string buffer into an intel
 
 | Keystroke | Action |
 | :--- | :--- |
-| `Option + Space` | Toggle SORTA HUD |
+| **Tap `Control` 3x** / `Option + Space` | Toggle SORTA HUD |
 | `1`, `2`, `3`, `4` | Select smart action & auto-paste into active app |
 | `↑` / `↓` | Navigate clipboard history |
 | `Enter` | Paste selected history snippet |
