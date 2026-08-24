@@ -12,198 +12,231 @@ public struct SortaHUDView: View {
 
     public var body: some View {
         HStack(spacing: 0) {
-            // LEFT COLUMN: Search & History List (Width 290)
-            VStack(spacing: 0) {
-                // Search Bar
-                HStack(spacing: 8) {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundColor(.secondary)
-                        .font(.system(size: 13))
-
-                    TextField("Search clipboard...", text: $viewModel.searchQuery)
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 13))
-
-                    if !viewModel.searchQuery.isEmpty {
-                        Button(action: { viewModel.searchQuery = "" }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.secondary)
-                                .font(.system(size: 12))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-                .padding(12)
-                .background(Color.white.opacity(0.04))
-
-                Divider()
-                    .background(Color.white.opacity(0.1))
-
-                // History List with Category Filter Pills
-                HistoryListView(
-                    viewModel: viewModel,
-                    watcher: watcher,
-                    onSelect: { selectedItem in
-                        // Selection already updates automatically
-                    },
-                    onDoubleClick: { selectedItem in
-                        watcher.pasteRawItem(selectedItem)
-                        PanelManager.shared.hidePanel()
-                    }
-                )
-
-                Spacer(minLength: 0)
-
-                Divider()
-                    .background(Color.white.opacity(0.1))
-
-                // Left Footer
-                HStack {
-                    Text("\(viewModel.filteredHistory.count) items")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(.secondary)
-
-                    Spacer()
-
-                    if !watcher.history.isEmpty {
-                        Button("Clear Unpinned") {
-                            watcher.clearHistory(preservePinned: true)
-                        }
-                        .buttonStyle(.plain)
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(.secondary)
-                    }
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color.white.opacity(0.02))
-            }
-            .frame(width: 290)
-
-            Divider()
-                .background(Color.white.opacity(0.15))
-
-            // RIGHT COLUMN: Full Content Viewer (Flex width)
-            VStack(spacing: 0) {
-                if let item = viewModel.currentSelectedItem {
-                    // Header Bar
+            // OPTIONAL SIDEBAR: Hidden by default, toggled with Tab / Cmd+H or Hover Button
+            if viewModel.isSidebarVisible {
+                VStack(spacing: 0) {
+                    // Search Bar
                     HStack(spacing: 8) {
-                        HStack(spacing: 6) {
-                            Image(systemName: item.category.systemImageName)
-                                .foregroundColor(.blue)
-                                .font(.system(size: 12, weight: .bold))
-
-                            Text(item.category.rawValue)
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.primary)
-                        }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.blue.opacity(0.15))
-                        .cornerRadius(6)
-
-                        Text("• \(item.rawContent.count) chars, \(item.rawContent.components(separatedBy: .newlines).count) lines")
-                            .font(.system(size: 10, weight: .medium))
+                        Image(systemName: "magnifyingglass")
                             .foregroundColor(.secondary)
+                            .font(.system(size: 12))
 
-                        Spacer()
+                        TextField("Search...", text: $viewModel.searchQuery)
+                            .textFieldStyle(.plain)
+                            .font(.system(size: 12))
 
-                        // Star / Pin Button
-                        Button(action: {
-                            watcher.togglePin(item: item)
-                        }) {
-                            Image(systemName: item.isPinned ? "star.fill" : "star")
-                                .font(.system(size: 12))
-                                .foregroundColor(item.isPinned ? .yellow : .secondary)
-                                .padding(5)
-                                .background(Color.white.opacity(0.06))
-                                .cornerRadius(5)
-                        }
-                        .buttonStyle(.plain)
-
-                        // Copy Button
-                        Button(action: {
-                            watcher.copyToClipboard(content: item.rawContent)
-                            PanelManager.shared.hidePanel()
-                        }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "doc.on.doc")
-                                    .font(.system(size: 10))
-                                Text("Copy")
-                                    .font(.system(size: 11, weight: .medium))
+                        if !viewModel.searchQuery.isEmpty {
+                            Button(action: { viewModel.searchQuery = "" }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.secondary)
+                                    .font(.system(size: 11))
                             }
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color.white.opacity(0.08))
-                            .cornerRadius(5)
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
-
-                        // Paste Button
-                        Button(action: {
-                            watcher.pasteRawItem(item)
-                            PanelManager.shared.hidePanel()
-                        }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "return")
-                                    .font(.system(size: 10, weight: .bold))
-                                Text("Paste")
-                                    .font(.system(size: 11, weight: .bold))
-                            }
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 4)
-                            .background(Color.blue)
-                            .cornerRadius(5)
-                        }
-                        .buttonStyle(.plain)
                     }
-                    .padding(12)
-                    .background(Color.white.opacity(0.03))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .background(Color.white.opacity(0.04))
 
                     Divider()
-                        .background(Color.white.opacity(0.1))
+                        .background(Color.white.opacity(0.08))
 
-                    // FULL CONTENT BODY (Scrollable, complete content display)
-                    ScrollView([.vertical, .horizontal]) {
-                        Text(item.rawContent)
-                            .font(.system(size: 12.5, design: fontDesignForCategory(item.category)))
-                            .foregroundColor(.white)
-                            .lineSpacing(4)
-                            .textSelection(.enabled)
-                            .padding(14)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                    }
-                    .background(Color.black.opacity(0.35))
+                    // History List
+                    HistoryListView(
+                        viewModel: viewModel,
+                        watcher: watcher,
+                        onSelect: { _ in },
+                        onDoubleClick: { selectedItem in
+                            watcher.pasteRawItem(selectedItem)
+                            PanelManager.shared.hidePanel()
+                        }
+                    )
+
+                    Spacer(minLength: 0)
 
                     Divider()
-                        .background(Color.white.opacity(0.1))
+                        .background(Color.white.opacity(0.08))
 
-                    // Footer Keyboard Helper
+                    // Sidebar Footer
                     HStack {
-                        Text(formattedFullDate(item.createdAt))
+                        Text("\(viewModel.filteredHistory.count) clips")
                             .font(.system(size: 10))
                             .foregroundColor(.secondary)
 
                         Spacer()
 
-                        HStack(spacing: 12) {
-                            KeyboardBadge(key: "↵", label: "Paste")
-                            KeyboardBadge(key: "⌘C", label: "Copy")
-                            KeyboardBadge(key: "⌘P", label: "Pin")
-                            KeyboardBadge(key: "esc", label: "Close")
+                        if !watcher.history.isEmpty {
+                            Button("Clear") {
+                                watcher.clearHistory(preservePinned: true)
+                            }
+                            .buttonStyle(.plain)
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
                         }
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
                     .background(Color.white.opacity(0.02))
-                } else {
-                    VStack(spacing: 12) {
-                        Image(systemName: "doc.text.magnifyingglass")
-                            .font(.system(size: 36))
-                            .foregroundColor(.secondary.opacity(0.5))
+                }
+                .frame(width: 250)
+                .transition(.move(edge: .leading).combined(with: .opacity))
 
-                        Text("Select an item to view full content")
+                Divider()
+                    .background(Color.white.opacity(0.12))
+            }
+
+            // MAIN AREA: Full Content Viewer
+            VStack(spacing: 0) {
+                if let item = viewModel.currentSelectedItem {
+                    // Top Header Bar
+                    HStack(spacing: 8) {
+                        // Toggle Sidebar Button (Hover Only or Active)
+                        Button(action: {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                viewModel.isSidebarVisible.toggle()
+                            }
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: viewModel.isSidebarVisible ? "sidebar.left" : "clock.arrow.circlepath")
+                                    .font(.system(size: 11))
+                                if !viewModel.isSidebarVisible && viewModel.isHovering {
+                                    Text("History")
+                                        .font(.system(size: 11, weight: .medium))
+                                }
+                            }
+                            .foregroundColor(viewModel.isSidebarVisible ? .blue : .secondary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 4)
+                            .background(Color.white.opacity(viewModel.isSidebarVisible ? 0.12 : (viewModel.isHovering ? 0.08 : 0.0)))
+                            .cornerRadius(5)
+                        }
+                        .buttonStyle(.plain)
+
+                        // Category Badge
+                        HStack(spacing: 5) {
+                            Image(systemName: item.category.systemImageName)
+                                .foregroundColor(.blue)
+                                .font(.system(size: 11, weight: .semibold))
+
+                            Text(item.category.rawValue)
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(.primary)
+                        }
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(Color.blue.opacity(0.15))
+                        .cornerRadius(5)
+
+                        // Stats
+                        Text("\(item.rawContent.count) chars • \(item.rawContent.components(separatedBy: .newlines).count) lines")
+                            .font(.system(size: 10, weight: .regular))
+                            .foregroundColor(.secondary)
+
+                        Spacer()
+
+                        // Minimal Action Options (Visible only on Mouse Hover!)
+                        HStack(spacing: 6) {
+                            // Star / Pin
+                            Button(action: {
+                                watcher.togglePin(item: item)
+                            }) {
+                                Image(systemName: item.isPinned ? "star.fill" : "star")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(item.isPinned ? .yellow : .secondary)
+                                    .padding(5)
+                                    .background(Color.white.opacity(0.08))
+                                    .cornerRadius(5)
+                            }
+                            .buttonStyle(.plain)
+
+                            // Copy
+                            Button(action: {
+                                watcher.copyToClipboard(content: item.rawContent)
+                                PanelManager.shared.hidePanel()
+                            }) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "doc.on.doc")
+                                        .font(.system(size: 10))
+                                    Text("Copy")
+                                        .font(.system(size: 11, weight: .medium))
+                                }
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.white.opacity(0.08))
+                                .cornerRadius(5)
+                            }
+                            .buttonStyle(.plain)
+
+                            // Paste
+                            Button(action: {
+                                watcher.pasteRawItem(item)
+                                PanelManager.shared.hidePanel()
+                            }) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "return")
+                                        .font(.system(size: 10, weight: .bold))
+                                    Text("Paste")
+                                        .font(.system(size: 11, weight: .bold))
+                                }
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 9)
+                                .padding(.vertical, 4)
+                                .background(Color.blue)
+                                .cornerRadius(5)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .opacity(viewModel.isHovering ? 1.0 : 0.0)
+                        .animation(.easeInOut(duration: 0.15), value: viewModel.isHovering)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(Color.white.opacity(0.02))
+
+                    Divider()
+                        .background(Color.white.opacity(0.08))
+
+                    // FULL CONTENT BODY (Vertical scroll only, natural multiline text wrapping)
+                    ScrollView(.vertical, showsIndicators: true) {
+                        Text(item.rawContent)
+                            .font(.system(size: 13, design: fontDesignForCategory(item.category)))
+                            .foregroundColor(.white.opacity(0.95))
+                            .lineSpacing(5)
+                            .multilineTextAlignment(.leading)
+                            .textSelection(.enabled)
+                            .padding(16)
+                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                    Divider()
+                        .background(Color.white.opacity(0.08))
+
+                    // Subtle Minimal Footer
+                    HStack {
+                        Text(formattedFullDate(item.createdAt))
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary.opacity(0.8))
+
+                        Spacer()
+
+                        HStack(spacing: 10) {
+                            KeyboardBadge(key: "↵", label: "Paste")
+                            KeyboardBadge(key: "⌘C", label: "Copy")
+                            KeyboardBadge(key: "Tab", label: "History")
+                            KeyboardBadge(key: "esc", label: "Close")
+                        }
+                        .opacity(viewModel.isHovering ? 1.0 : 0.4)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(Color.white.opacity(0.015))
+                } else {
+                    VStack(spacing: 10) {
+                        Image(systemName: "doc.on.clipboard")
+                            .font(.system(size: 32))
+                            .foregroundColor(.secondary.opacity(0.4))
+                        Text("No clipboard content")
                             .font(.system(size: 13))
                             .foregroundColor(.secondary)
                     }
@@ -212,7 +245,7 @@ public struct SortaHUDView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .frame(width: 740, height: 480)
+        .frame(width: viewModel.isSidebarVisible ? 720 : 580, height: 440)
         .background(
             ZStack {
                 Color(red: 0.10, green: 0.10, blue: 0.12).opacity(0.96)
@@ -221,9 +254,14 @@ public struct SortaHUDView: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                .stroke(Color.white.opacity(0.14), lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 14))
+        .onHover { hovering in
+            withAnimation(.easeInOut(duration: 0.15)) {
+                viewModel.isHovering = hovering
+            }
+        }
         .background(
             KeyEventHandlerView { event in
                 return viewModel.handleKeyDown(event: event)
@@ -258,12 +296,12 @@ struct KeyboardBadge: View {
                 .font(.system(size: 9, weight: .bold, design: .monospaced))
                 .padding(.horizontal, 4)
                 .padding(.vertical, 1.5)
-                .background(Color.white.opacity(0.12))
+                .background(Color.white.opacity(0.10))
                 .cornerRadius(3)
-                .foregroundColor(.primary)
+                .foregroundColor(.primary.opacity(0.9))
 
             Text(label)
-                .font(.system(size: 10))
+                .font(.system(size: 9.5))
                 .foregroundColor(.secondary)
         }
     }

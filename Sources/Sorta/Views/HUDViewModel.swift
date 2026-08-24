@@ -8,6 +8,8 @@ public final class HUDViewModel: ObservableObject {
     @Published public var selectedCategory: ClipCategory? = nil
     @Published public var isFilterPinnedOnly: Bool = false
     @Published public var selectedIndex: Int = 0
+    @Published public var isSidebarVisible: Bool = false
+    @Published public var isHovering: Bool = false
 
     public weak var watcher: PasteboardWatcher?
     private var cancellables = Set<AnyCancellable>()
@@ -60,13 +62,27 @@ public final class HUDViewModel: ObservableObject {
             return true
         }
 
-        // 2. Up / Down Arrows for History Navigation
+        // 2. Tab or Cmd + H -> Toggle Sidebar
+        if event.keyCode == 48 || (modifiers == .command && event.keyCode == 4) { // Tab or Cmd + H
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isSidebarVisible.toggle()
+            }
+            return true
+        }
+
+        // 3. Up / Down Arrows for History Navigation (automatically reveals sidebar if hidden)
         if event.keyCode == 126 { // Up Arrow
+            if !isSidebarVisible {
+                withAnimation(.easeInOut(duration: 0.2)) { isSidebarVisible = true }
+            }
             if selectedIndex > 0 {
                 selectedIndex -= 1
             }
             return true
         } else if event.keyCode == 125 { // Down Arrow
+            if !isSidebarVisible {
+                withAnimation(.easeInOut(duration: 0.2)) { isSidebarVisible = true }
+            }
             let count = filteredHistory.count
             if selectedIndex < count - 1 {
                 selectedIndex += 1
@@ -74,7 +90,7 @@ public final class HUDViewModel: ObservableObject {
             return true
         }
 
-        // 3. Return / Enter -> Paste Selected
+        // 4. Return / Enter -> Paste Selected
         if event.keyCode == 36 { // Enter
             if let item = currentSelectedItem {
                 watcher?.pasteRawItem(item)
@@ -83,7 +99,7 @@ public final class HUDViewModel: ObservableObject {
             }
         }
 
-        // 4. Cmd + C -> Copy Selected to clipboard
+        // 5. Cmd + C -> Copy Selected to clipboard
         if modifiers == .command && event.keyCode == 8 { // C
             if let item = currentSelectedItem {
                 watcher?.copyToClipboard(content: item.rawContent)
@@ -92,7 +108,7 @@ public final class HUDViewModel: ObservableObject {
             }
         }
 
-        // 5. Cmd + P or Cmd + S -> Toggle Pin on selected item
+        // 6. Cmd + P or Cmd + S -> Toggle Pin on selected item
         if modifiers == .command && (event.keyCode == 35 || event.keyCode == 1) { // P or S
             if let item = currentSelectedItem {
                 watcher?.togglePin(item: item)
@@ -100,7 +116,7 @@ public final class HUDViewModel: ObservableObject {
             }
         }
 
-        // 6. Cmd + Backspace -> Delete selected item
+        // 7. Cmd + Backspace -> Delete selected item
         if modifiers == .command && event.keyCode == 51 { // Delete
             if let item = currentSelectedItem {
                 watcher?.delete(item: item)
