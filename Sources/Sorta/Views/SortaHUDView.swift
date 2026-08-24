@@ -45,7 +45,7 @@ public struct SortaHUDView: View {
                     Divider()
                         .background(Color.white.opacity(0.08))
 
-                    // History List (Switches to 2-column image grid when Image category is filtered)
+                    // History List
                     HistoryListView(
                         viewModel: viewModel,
                         watcher: watcher,
@@ -122,7 +122,7 @@ public struct SortaHUDView: View {
                                 .foregroundColor(.secondary)
                                 .font(.system(size: 11, weight: .semibold))
 
-                            Text(item.category.rawValue)
+                            Text(item.isImage ? "Images (\(imageHistory.count))" : item.category.rawValue)
                                 .font(.system(size: 11, weight: .semibold))
                                 .foregroundColor(.primary)
                         }
@@ -207,57 +207,74 @@ public struct SortaHUDView: View {
                         .background(Color.white.opacity(0.08))
 
                     // FULL CONTENT BODY
-                    if item.isImage, let data = item.imageData, let nsImage = NSImage(data: data) {
-                        VStack(spacing: 0) {
-                            // Primary Image Canvas
-                            ScrollView([.vertical, .horizontal]) {
-                                VStack {
+                    if item.isImage {
+                        if imageHistory.count > 1 {
+                            // Responsive Multi-Cell Image Grid
+                            ScrollView(.vertical, showsIndicators: true) {
+                                LazyVGrid(columns: [GridItem(.adaptive(minimum: 140, maximum: 200), spacing: 10)], spacing: 10) {
+                                    ForEach(imageHistory) { imgItem in
+                                        ImageGridCard(
+                                            item: imgItem,
+                                            isSelected: imgItem.id == item.id,
+                                            onSelect: {
+                                                if let idx = viewModel.filteredHistory.firstIndex(where: { $0.id == imgItem.id }) {
+                                                    viewModel.selectedIndex = idx
+                                                }
+                                            },
+                                            onDoubleClick: {
+                                                watcher.pasteRawItem(imgItem)
+                                                PanelManager.shared.hidePanel()
+                                            },
+                                            onTogglePin: {
+                                                watcher.togglePin(item: imgItem)
+                                            }
+                                        )
+                                    }
+                                }
+                                .padding(14)
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(Color.black.opacity(0.18))
+                        } else {
+                            // Single Image View (Shrunk, centered modern card)
+                            VStack(spacing: 12) {
+                                if let data = item.imageData, let nsImage = NSImage(data: data) {
                                     Image(nsImage: nsImage)
                                         .resizable()
                                         .aspectRatio(contentMode: .fit)
+                                        .frame(maxWidth: 360, maxHeight: 230)
                                         .cornerRadius(8)
-                                        .shadow(color: Color.black.opacity(0.4), radius: 10, x: 0, y: 5)
-                                        .padding(16)
+                                        .shadow(color: Color.black.opacity(0.45), radius: 12, x: 0, y: 6)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                                        )
                                 }
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                                // Dimension & size pill
+                                HStack(spacing: 6) {
+                                    if let dims = item.imageDimensions {
+                                        Text(dims)
+                                            .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
+                                            .foregroundColor(.white.opacity(0.9))
+                                    }
+                                    if let count = item.imageData?.count {
+                                        Text("•")
+                                            .font(.system(size: 8))
+                                            .foregroundColor(.secondary)
+                                        Text("\(count / 1024) KB")
+                                            .font(.system(size: 10))
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 4)
+                                .background(Color.white.opacity(0.06))
+                                .cornerRadius(6)
                             }
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .background(Color.black.opacity(0.20))
-
-                            // Recent Image Strip / Mini-Gallery
-                            if imageHistory.count > 1 {
-                                Divider()
-                                    .background(Color.white.opacity(0.06))
-
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: 6) {
-                                        ForEach(imageHistory) { imgItem in
-                                            if let imgData = imgItem.imageData, let thumb = NSImage(data: imgData) {
-                                                Button(action: {
-                                                    if let idx = viewModel.filteredHistory.firstIndex(where: { $0.id == imgItem.id }) {
-                                                        viewModel.selectedIndex = idx
-                                                    }
-                                                }) {
-                                                    Image(nsImage: thumb)
-                                                        .resizable()
-                                                        .aspectRatio(contentMode: .fill)
-                                                        .frame(width: 44, height: 44)
-                                                        .cornerRadius(4)
-                                                        .clipped()
-                                                        .overlay(
-                                                            RoundedRectangle(cornerRadius: 4)
-                                                                .stroke(imgItem.id == item.id ? Color.white : Color.white.opacity(0.12), lineWidth: imgItem.id == item.id ? 2 : 1)
-                                                        )
-                                                }
-                                                .buttonStyle(.plain)
-                                            }
-                                        }
-                                    }
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                }
-                                .background(Color.black.opacity(0.35))
-                            }
+                            .padding(20)
+                            .background(Color.black.opacity(0.18))
                         }
                     } else {
                         // Text Viewer (Vertical scroll only, natural multiline text wrapping)
@@ -363,6 +380,78 @@ public struct SortaHUDView: View {
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
         return formatter.string(from: date)
+    }
+}
+
+/// Modern Image Grid Card for multi-image gallery view
+struct ImageGridCard: View {
+    let item: ClipItem
+    let isSelected: Bool
+    let onSelect: () -> Void
+    let onDoubleClick: () -> Void
+    let onTogglePin: () -> Void
+
+    var body: some View {
+        Button(action: onSelect) {
+            ZStack(alignment: .bottomLeading) {
+                if let data = item.imageData, let img = NSImage(data: data) {
+                    Image(nsImage: img)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(height: 105)
+                        .clipped()
+                        .background(Color.white.opacity(0.04))
+                } else {
+                    Rectangle()
+                        .fill(Color.white.opacity(0.04))
+                        .frame(height: 105)
+                        .overlay(
+                            Image(systemName: "photo")
+                                .font(.system(size: 24))
+                                .foregroundColor(.secondary)
+                        )
+                }
+
+                // Dark gradient overlay at bottom
+                LinearGradient(
+                    colors: [Color.clear, Color.black.opacity(0.85)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 32)
+
+                // Info overlay
+                HStack(spacing: 4) {
+                    if let dims = item.imageDimensions {
+                        Text(dims)
+                            .font(.system(size: 8.5, weight: .bold, design: .monospaced))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                    }
+
+                    Spacer()
+
+                    if item.isPinned {
+                        Image(systemName: "star.fill")
+                            .font(.system(size: 8.5))
+                            .foregroundColor(.yellow)
+                    }
+                }
+                .padding(.horizontal, 6)
+                .padding(.bottom, 5)
+            }
+            .cornerRadius(8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(isSelected ? Color.white : Color.white.opacity(0.12), lineWidth: isSelected ? 2 : 1)
+            )
+            .shadow(color: isSelected ? Color.black.opacity(0.5) : Color.clear, radius: 5)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .simultaneousGesture(TapGesture(count: 2).onEnded {
+            onDoubleClick()
+        })
     }
 }
 
