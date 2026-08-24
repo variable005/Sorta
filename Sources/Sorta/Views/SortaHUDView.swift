@@ -86,7 +86,7 @@ public struct SortaHUDView: View {
                 .transition(.move(edge: .leading).combined(with: .opacity))
 
                 Divider()
-                    .background(Color.white.opacity(0.12))
+                    .background(Color.white.opacity(0.10))
             }
 
             // MAIN AREA: Full Content Viewer
@@ -94,7 +94,7 @@ public struct SortaHUDView: View {
                 if let item = viewModel.currentSelectedItem {
                     // Top Header Bar
                     HStack(spacing: 8) {
-                        // Toggle Sidebar Button (Hover Only or Active)
+                        // Toggle Sidebar Button
                         Button(action: {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 viewModel.isSidebarVisible.toggle()
@@ -129,22 +129,22 @@ public struct SortaHUDView: View {
                                 .foregroundColor(.primary)
                                 .lineLimit(1)
                         }
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 3)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3.5)
                         .background(Color.white.opacity(0.08))
-                        .cornerRadius(5)
+                        .cornerRadius(6)
                         .fixedSize()
 
-                        // Stats
+                        // Metadata Stats
                         if item.isImage {
                             Text(formatImageStats(item))
-                                .font(.system(size: 10, weight: .regular))
+                                .font(.system(size: 10.5, weight: .regular))
                                 .foregroundColor(.secondary)
                                 .lineLimit(1)
                                 .truncationMode(.tail)
                         } else {
-                            Text("\(item.rawContent.count) chars • \(item.rawContent.components(separatedBy: .newlines).count) lines • \(countWords(item.rawContent)) words")
-                                .font(.system(size: 10, weight: .regular))
+                            Text("\(item.rawContent.count) chars • \(item.rawContent.components(separatedBy: .newlines).count) lines")
+                                .font(.system(size: 10.5, weight: .regular))
                                 .foregroundColor(.secondary)
                                 .lineLimit(1)
                                 .truncationMode(.tail)
@@ -152,7 +152,7 @@ public struct SortaHUDView: View {
 
                         Spacer(minLength: 12)
 
-                        // Minimal Action Options (Always strictly single line with fixed width)
+                        // Action Buttons (Fixed single line, reveals on hover)
                         HStack(spacing: 6) {
                             // Star / Pin
                             Button(action: {
@@ -217,83 +217,83 @@ public struct SortaHUDView: View {
                     Divider()
                         .background(Color.white.opacity(0.08))
 
-                    // FULL CONTENT BODY (SMART FORMATTED VIEWER)
-                    if item.isImage {
-                        if imageHistory.count > 1 {
-                            // Responsive Multi-Cell Image Grid (Strictly bounded 2-columns)
-                            ScrollView(.vertical, showsIndicators: true) {
-                                LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-                                    ForEach(imageHistory) { imgItem in
-                                        ImageGridCard(
-                                            item: imgItem,
-                                            isSelected: imgItem.id == item.id,
-                                            onSelect: {
-                                                if let idx = viewModel.filteredHistory.firstIndex(where: { $0.id == imgItem.id }) {
-                                                    viewModel.selectedIndex = idx
+                    // MAIN CONTENT VIEWPORT
+                    VStack {
+                        if item.isImage {
+                            if imageHistory.count > 1 {
+                                // Multi-image grid
+                                ScrollView(.vertical, showsIndicators: true) {
+                                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                                        ForEach(imageHistory) { imgItem in
+                                            ImageGridCard(
+                                                item: imgItem,
+                                                isSelected: imgItem.id == item.id,
+                                                onSelect: {
+                                                    if let idx = viewModel.filteredHistory.firstIndex(where: { $0.id == imgItem.id }) {
+                                                        viewModel.selectedIndex = idx
+                                                    }
+                                                },
+                                                onDoubleClick: {
+                                                    watcher.pasteRawItem(imgItem)
+                                                    PanelManager.shared.hidePanel()
+                                                },
+                                                onTogglePin: {
+                                                    watcher.togglePin(item: imgItem)
                                                 }
-                                            },
-                                            onDoubleClick: {
-                                                watcher.pasteRawItem(imgItem)
-                                                PanelManager.shared.hidePanel()
-                                            },
-                                            onTogglePin: {
-                                                watcher.togglePin(item: imgItem)
-                                            }
-                                        )
+                                            )
+                                        }
                                     }
+                                    .padding(14)
                                 }
-                                .padding(14)
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .background(Color.black.opacity(0.18))
-                        } else {
-                            // Single Image View (Shrunk, centered modern card)
-                            VStack(spacing: 12) {
-                                if let data = item.imageData, let nsImage = NSImage(data: data) {
-                                    Image(nsImage: nsImage)
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                        .frame(maxWidth: 360, maxHeight: 230)
-                                        .cornerRadius(8)
-                                        .shadow(color: Color.black.opacity(0.45), radius: 12, x: 0, y: 6)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .stroke(Color.white.opacity(0.14), lineWidth: 1)
-                                        )
-                                }
+                            } else {
+                                // Single image preview
+                                VStack(spacing: 12) {
+                                    if let data = item.imageData, let nsImage = NSImage(data: data) {
+                                        Image(nsImage: nsImage)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(maxWidth: 360, maxHeight: 230)
+                                            .cornerRadius(8)
+                                            .shadow(color: Color.black.opacity(0.45), radius: 12, x: 0, y: 6)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                                            )
+                                    }
 
-                                // Dimension & size pill
-                                HStack(spacing: 6) {
-                                    if let dims = item.imageDimensions {
-                                        Text(dims)
-                                            .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
-                                            .foregroundColor(.white.opacity(0.9))
-                                            .lineLimit(1)
+                                    HStack(spacing: 6) {
+                                        if let dims = item.imageDimensions {
+                                            Text(dims)
+                                                .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
+                                                .foregroundColor(.white.opacity(0.9))
+                                                .lineLimit(1)
+                                        }
+                                        if let count = item.imageData?.count {
+                                            Text("•")
+                                                .font(.system(size: 8))
+                                                .foregroundColor(.secondary)
+                                            Text("\(count / 1024) KB")
+                                                .font(.system(size: 10))
+                                                .foregroundColor(.secondary)
+                                                .lineLimit(1)
+                                        }
                                     }
-                                    if let count = item.imageData?.count {
-                                        Text("•")
-                                            .font(.system(size: 8))
-                                            .foregroundColor(.secondary)
-                                        Text("\(count / 1024) KB")
-                                            .font(.system(size: 10))
-                                            .foregroundColor(.secondary)
-                                            .lineLimit(1)
-                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 4)
+                                    .background(Color.white.opacity(0.06))
+                                    .cornerRadius(6)
+                                    .fixedSize()
                                 }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 4)
-                                .background(Color.white.opacity(0.06))
-                                .cornerRadius(6)
-                                .fixedSize()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .padding(20)
                             }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .padding(20)
-                            .background(Color.black.opacity(0.18))
+                        } else {
+                            // High-end Text Viewer in Frosted Card Container
+                            SmartTextCardView(item: item, watcher: watcher)
                         }
-                    } else {
-                        // SMART TEXT FORMATTER
-                        SmartTextFormatterView(item: item, watcher: watcher)
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.black.opacity(0.16))
 
                     Divider()
                         .background(Color.white.opacity(0.08))
@@ -336,13 +336,13 @@ public struct SortaHUDView: View {
         .frame(width: viewModel.isSidebarVisible ? 720 : 580, height: 440)
         .background(
             ZStack {
-                Color(red: 0.11, green: 0.11, blue: 0.12).opacity(0.96)
+                Color(red: 0.11, green: 0.11, blue: 0.13).opacity(0.98)
                 VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
             }
         )
         .overlay(
             RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                .stroke(Color.white.opacity(0.12), lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .onHover { hovering in
@@ -355,11 +355,6 @@ public struct SortaHUDView: View {
                 return viewModel.handleKeyDown(event: event)
             }
         )
-    }
-
-    private func countWords(_ string: String) -> Int {
-        let words = string.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
-        return words.count
     }
 
     private func formatImageStats(_ item: ClipItem) -> String {
@@ -385,31 +380,151 @@ public struct SortaHUDView: View {
     }
 }
 
-/// Smart Context-Aware Formatter for various clipboard types
-struct SmartTextFormatterView: View {
+/// Smart Text Card View with Inset Card Container & Clean Typography
+struct SmartTextCardView: View {
     let item: ClipItem
     let watcher: PasteboardWatcher
 
     var body: some View {
-        switch item.category {
-        case .color:
-            ColorDetailView(rawContent: item.rawContent, watcher: watcher)
-        case .timestamp:
-            TimestampDetailView(rawContent: item.rawContent)
-        case .jwt:
-            JWTDetailView(rawContent: item.rawContent)
-        case .json:
-            JSONCodeViewer(rawContent: item.rawContent)
-        case .url:
-            URLDetailView(rawContent: item.rawContent)
-        default:
-            StandardTextViewer(rawContent: item.rawContent, category: item.category)
+        VStack(spacing: 0) {
+            switch item.category {
+            case .color:
+                ColorDetailCard(rawContent: item.rawContent, watcher: watcher)
+            case .timestamp:
+                TimestampDetailCard(rawContent: item.rawContent)
+            case .jwt:
+                JWTDetailCard(rawContent: item.rawContent)
+            case .json:
+                JSONDetailCard(rawContent: item.rawContent)
+            case .url:
+                URLDetailCard(rawContent: item.rawContent)
+            default:
+                StandardTextCard(rawContent: item.rawContent, category: item.category)
+            }
+        }
+        .padding(12)
+    }
+}
+
+/// Standard Text Inset Card with natural wrapping and comfortable line height
+struct StandardTextCard: View {
+    let rawContent: String
+    let category: ClipCategory
+
+    var isMonospaced: Bool {
+        category == .json || category == .curl || category == .jwt || category == .sort
+    }
+
+    var body: some View {
+        ScrollView(.vertical, showsIndicators: true) {
+            Text(rawContent)
+                .font(.system(size: isMonospaced ? 12.5 : 13.5, weight: .regular, design: isMonospaced ? .monospaced : .default))
+                .foregroundColor(Color.white.opacity(0.95))
+                .lineSpacing(isMonospaced ? 4 : 5)
+                .multilineTextAlignment(.leading)
+                .textSelection(.enabled)
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.white.opacity(0.03))
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+    }
+}
+
+/// JSON Card (Pretty prints valid JSON automatically)
+struct JSONDetailCard: View {
+    let rawContent: String
+
+    var prettyJSON: String {
+        let trimmed = rawContent.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let data = trimmed.data(using: .utf8),
+           let obj = try? JSONSerialization.jsonObject(with: data),
+           let prettyData = try? JSONSerialization.data(withJSONObject: obj, options: [.prettyPrinted, .sortedKeys]),
+           let str = String(data: prettyData, encoding: .utf8) {
+            return str
+        }
+        return rawContent
+    }
+
+    var body: some View {
+        ScrollView([.vertical, .horizontal], showsIndicators: true) {
+            Text(prettyJSON)
+                .font(.system(size: 12.5, weight: .regular, design: .monospaced))
+                .foregroundColor(Color.white.opacity(0.95))
+                .lineSpacing(4)
+                .multilineTextAlignment(.leading)
+                .textSelection(.enabled)
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.white.opacity(0.03))
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+    }
+}
+
+/// JWT Token Card
+struct JWTDetailCard: View {
+    let rawContent: String
+
+    var decodedPayload: String? {
+        let parts = rawContent.split(separator: ".")
+        guard parts.count == 3 else { return nil }
+        var base64 = String(parts[1])
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+        while base64.count % 4 != 0 { base64.append("=") }
+        guard let data = Data(base64Encoded: base64),
+              let json = try? JSONSerialization.jsonObject(with: data),
+              let pretty = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]),
+              let str = String(data: pretty, encoding: .utf8) else {
+            return nil
+        }
+        return str
+    }
+
+    var body: some View {
+        if let payload = decodedPayload {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Decoded JWT Claims")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 4)
+
+                ScrollView([.vertical, .horizontal], showsIndicators: true) {
+                    Text(payload)
+                        .font(.system(size: 12.5, weight: .regular, design: .monospaced))
+                        .foregroundColor(Color.white.opacity(0.95))
+                        .lineSpacing(4)
+                        .textSelection(.enabled)
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .topLeading)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.white.opacity(0.03))
+                .cornerRadius(10)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                )
+            }
+        } else {
+            StandardTextCard(rawContent: rawContent, category: .jwt)
         }
     }
 }
 
-/// Rich Visual Color Swatch & Code Formatter
-struct ColorDetailView: View {
+/// Color Detail Card
+struct ColorDetailCard: View {
     let rawContent: String
     let watcher: PasteboardWatcher
 
@@ -432,35 +547,39 @@ struct ColorDetailView: View {
     var body: some View {
         if let col = parsedColor {
             VStack(spacing: 16) {
-                // Color Tile
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color(red: col.r, green: col.g, blue: col.b))
-                    .frame(width: 90, height: 90)
+                    .frame(width: 84, height: 84)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                            .stroke(Color.white.opacity(0.25), lineWidth: 1)
                     )
-                    .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 5)
+                    .shadow(color: Color.black.opacity(0.4), radius: 10, x: 0, y: 5)
 
-                // Color Details
                 VStack(spacing: 8) {
-                    ColorRow(label: "HEX", value: col.hex) { watcher.copyToClipboard(content: col.hex) }
-                    ColorRow(label: "RGB", value: col.rgb) { watcher.copyToClipboard(content: col.rgb) }
-                    ColorRow(label: "SwiftUI", value: String(format: "Color(red: %.2f, green: %.2f, blue: %.2f)", col.r, col.g, col.b)) {
+                    ColorCardRow(label: "HEX", value: col.hex) { watcher.copyToClipboard(content: col.hex) }
+                    ColorCardRow(label: "RGB", value: col.rgb) { watcher.copyToClipboard(content: col.rgb) }
+                    ColorCardRow(label: "SwiftUI", value: String(format: "Color(red: %.2f, green: %.2f, blue: %.2f)", col.r, col.g, col.b)) {
                         watcher.copyToClipboard(content: String(format: "Color(red: %.3f, green: %.3f, blue: %.3f)", col.r, col.g, col.b))
                     }
                 }
-                .frame(maxWidth: 340)
+                .frame(maxWidth: 320)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(20)
+            .padding(16)
+            .background(Color.white.opacity(0.03))
+            .cornerRadius(10)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            )
         } else {
-            StandardTextViewer(rawContent: rawContent, category: .color)
+            StandardTextCard(rawContent: rawContent, category: .color)
         }
     }
 }
 
-struct ColorRow: View {
+struct ColorCardRow: View {
     let label: String
     let value: String
     let onCopy: () -> Void
@@ -470,7 +589,7 @@ struct ColorRow: View {
             Text(label)
                 .font(.system(size: 11, weight: .bold, design: .monospaced))
                 .foregroundColor(.secondary)
-                .frame(width: 60, alignment: .leading)
+                .frame(width: 55, alignment: .leading)
 
             Text(value)
                 .font(.system(size: 12, design: .monospaced))
@@ -496,8 +615,8 @@ struct ColorRow: View {
     }
 }
 
-/// Formatted Date & Timestamp Viewer
-struct TimestampDetailView: View {
+/// Timestamp Detail Card
+struct TimestampDetailCard: View {
     let rawContent: String
 
     var parsedDate: Date? {
@@ -514,11 +633,11 @@ struct TimestampDetailView: View {
         if let date = parsedDate {
             VStack(spacing: 14) {
                 Image(systemName: "calendar.badge.clock")
-                    .font(.system(size: 32))
+                    .font(.system(size: 30))
                     .foregroundColor(.secondary)
 
-                VStack(spacing: 6) {
-                    Text(formattedDate(date, style: .full))
+                VStack(spacing: 5) {
+                    Text(formattedDate(date))
                         .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.white)
 
@@ -527,28 +646,46 @@ struct TimestampDetailView: View {
                         .foregroundColor(.white.opacity(0.85))
                 }
 
-                HStack(spacing: 10) {
-                    PillBadge(label: "Relative", value: relativeTime(date))
-                    PillBadge(label: "Epoch", value: "\(Int(date.timeIntervalSince1970))")
+                HStack(spacing: 8) {
+                    Text("Relative: \(relativeTime(date))")
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.white.opacity(0.06))
+                        .cornerRadius(6)
+
+                    Text("Epoch: \(Int(date.timeIntervalSince1970))")
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.white.opacity(0.06))
+                        .cornerRadius(6)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .padding(20)
+            .padding(16)
+            .background(Color.white.opacity(0.03))
+            .cornerRadius(10)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+            )
         } else {
-            StandardTextViewer(rawContent: rawContent, category: .timestamp)
+            StandardTextCard(rawContent: rawContent, category: .timestamp)
         }
     }
 
-    private func formattedDate(_ date: Date, style: DateFormatter.Style) -> String {
+    private func formattedDate(_ date: Date) -> String {
         let f = DateFormatter()
-        f.dateStyle = style
+        f.dateStyle = .full
         return f.string(from: date)
     }
 
     private func formattedTime(_ date: Date) -> String {
         let f = DateFormatter()
         f.timeStyle = .medium
-        f.timeZone = .current
         return f.string(from: date)
     }
 
@@ -559,120 +696,8 @@ struct TimestampDetailView: View {
     }
 }
 
-struct PillBadge: View {
-    let label: String
-    let value: String
-
-    var body: some View {
-        HStack(spacing: 4) {
-            Text(label + ":")
-                .font(.system(size: 10, weight: .bold))
-                .foregroundColor(.secondary)
-            Text(value)
-                .font(.system(size: 10, design: .monospaced))
-                .foregroundColor(.white)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(Color.white.opacity(0.06))
-        .cornerRadius(6)
-    }
-}
-
-/// Decoded JWT Viewer with Claims Formatting
-struct JWTDetailView: View {
-    let rawContent: String
-
-    var decodedPayload: String? {
-        let parts = rawContent.split(separator: ".")
-        guard parts.count == 3 else { return nil }
-        var base64 = String(parts[1])
-            .replacingOccurrences(of: "-", with: "+")
-            .replacingOccurrences(of: "_", with: "/")
-        while base64.count % 4 != 0 { base64.append("=") }
-        guard let data = Data(base64Encoded: base64),
-              let json = try? JSONSerialization.jsonObject(with: data),
-              let pretty = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]),
-              let str = String(data: pretty, encoding: .utf8) else {
-            return nil
-        }
-        return str
-    }
-
-    var body: some View {
-        if let payload = decodedPayload {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("Decoded JWT Payload")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.secondary)
-                    Spacer()
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 12)
-
-                JSONCodeViewer(rawContent: payload)
-            }
-        } else {
-            StandardTextViewer(rawContent: rawContent, category: .jwt)
-        }
-    }
-}
-
-/// Formatted JSON Code Viewer with Line Numbers
-struct JSONCodeViewer: View {
-    let rawContent: String
-
-    var formattedJSONLines: [String] {
-        let trimmed = rawContent.trimmingCharacters(in: .whitespacesAndNewlines)
-        if let data = trimmed.data(using: .utf8),
-           let obj = try? JSONSerialization.jsonObject(with: data),
-           let prettyData = try? JSONSerialization.data(withJSONObject: obj, options: [.prettyPrinted, .sortedKeys]),
-           let prettyStr = String(data: prettyData, encoding: .utf8) {
-            return prettyStr.components(separatedBy: .newlines)
-        }
-        return rawContent.components(separatedBy: .newlines)
-    }
-
-    var body: some View {
-        ScrollView([.vertical, .horizontal], showsIndicators: true) {
-            HStack(alignment: .top, spacing: 12) {
-                // Line Numbers Gutter
-                VStack(alignment: .trailing, spacing: 4) {
-                    ForEach(1...max(1, formattedJSONLines.count), id: \.self) { lineNum in
-                        Text("\(lineNum)")
-                            .font(.system(size: 12, weight: .medium, design: .monospaced))
-                            .foregroundColor(.secondary.opacity(0.4))
-                    }
-                }
-                .padding(.trailing, 4)
-                .overlay(
-                    Rectangle()
-                        .fill(Color.white.opacity(0.08))
-                        .frame(width: 1),
-                    alignment: .trailing
-                )
-
-                // Formatted Code Body
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(Array(formattedJSONLines.enumerated()), id: \.offset) { _, line in
-                        Text(line)
-                            .font(.system(size: 12, weight: .regular, design: .monospaced))
-                            .foregroundColor(.white.opacity(0.95))
-                    }
-                }
-            }
-            .textSelection(.enabled)
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.black.opacity(0.20))
-    }
-}
-
-/// Clean URL Inspector
-struct URLDetailView: View {
+/// URL Detail Card
+struct URLDetailCard: View {
     let rawContent: String
 
     var urlComponents: URLComponents? {
@@ -682,7 +707,6 @@ struct URLDetailView: View {
     var body: some View {
         ScrollView(.vertical, showsIndicators: true) {
             VStack(alignment: .leading, spacing: 12) {
-                // Main URL String
                 Text(rawContent)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.white)
@@ -694,17 +718,27 @@ struct URLDetailView: View {
                     .cornerRadius(8)
 
                 if let comps = urlComponents {
-                    // Host & Path Badges
                     HStack(spacing: 8) {
                         if let host = comps.host {
-                            PillBadge(label: "Host", value: host)
+                            Text("Host: \(host)")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.secondary)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.white.opacity(0.06))
+                                .cornerRadius(6)
                         }
                         if !comps.path.isEmpty && comps.path != "/" {
-                            PillBadge(label: "Path", value: comps.path)
+                            Text("Path: \(comps.path)")
+                                .font(.system(size: 10))
+                                .foregroundColor(.secondary)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.white.opacity(0.06))
+                                .cornerRadius(6)
                         }
                     }
 
-                    // Query Parameters List
                     if let queryItems = comps.queryItems, !queryItems.isEmpty {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Query Parameters (\(queryItems.count))")
@@ -738,76 +772,16 @@ struct URLDetailView: View {
                     }
                 }
             }
-            .padding(16)
+            .padding(14)
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-}
-
-/// Standard High-Contrast Text Viewer with Line Numbers for multi-line content
-struct StandardTextViewer: View {
-    let rawContent: String
-    let category: ClipCategory
-
-    var lines: [String] {
-        rawContent.components(separatedBy: .newlines)
-    }
-
-    var body: some View {
-        ScrollView(.vertical, showsIndicators: true) {
-            if lines.count > 2 {
-                // Multi-line code / list viewer with subtle line numbers
-                HStack(alignment: .top, spacing: 10) {
-                    VStack(alignment: .trailing, spacing: 4) {
-                        ForEach(1...lines.count, id: \.self) { lineNum in
-                            Text("\(lineNum)")
-                                .font(.system(size: 12, weight: .medium, design: .monospaced))
-                                .foregroundColor(.secondary.opacity(0.35))
-                        }
-                    }
-                    .padding(.trailing, 4)
-                    .overlay(
-                        Rectangle()
-                            .fill(Color.white.opacity(0.08))
-                            .frame(width: 1),
-                        alignment: .trailing
-                    )
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
-                            Text(line.isEmpty ? " " : line)
-                                .font(.system(size: 12.5, design: fontDesignForCategory(category)))
-                                .foregroundColor(.white.opacity(0.95))
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                    }
-                }
-                .textSelection(.enabled)
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .topLeading)
-            } else {
-                // Single/few line standard comfortable text
-                Text(rawContent)
-                    .font(.system(size: 13.5, design: fontDesignForCategory(category)))
-                    .foregroundColor(.white.opacity(0.95))
-                    .lineSpacing(5)
-                    .multilineTextAlignment(.leading)
-                    .textSelection(.enabled)
-                    .padding(16)
-                    .frame(maxWidth: .infinity, alignment: .topLeading)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    private func fontDesignForCategory(_ category: ClipCategory) -> Font.Design {
-        switch category {
-        case .json, .curl, .jwt, .sort:
-            return .monospaced
-        default:
-            return .default
-        }
+        .background(Color.white.opacity(0.03))
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
     }
 }
 
@@ -843,7 +817,6 @@ struct ImageGridCard: View {
                         )
                 }
 
-                // Dark gradient overlay at bottom
                 LinearGradient(
                     colors: [Color.clear, Color.black.opacity(0.85)],
                     startPoint: .top,
@@ -851,7 +824,6 @@ struct ImageGridCard: View {
                 )
                 .frame(height: 34)
 
-                // Info overlay
                 HStack(spacing: 4) {
                     if let dims = item.imageDimensions {
                         Text(dims)
