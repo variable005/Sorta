@@ -15,7 +15,9 @@ public final class MenuBarManager: ObservableObject {
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = statusItem?.button {
-            button.image = NSImage(systemSymbolName: "scissors", accessibilityDescription: "Sorta")
+            let image = NSImage(systemSymbolName: "square.on.square", accessibilityDescription: "Sorta")
+            image?.isTemplate = true
+            button.image = image
         }
 
         buildMenu()
