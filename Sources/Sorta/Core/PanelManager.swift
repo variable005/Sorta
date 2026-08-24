@@ -15,7 +15,7 @@ public final class PanelManager: ObservableObject {
         let hostingView = NSHostingView(rootView: rootView)
 
         let newPanel = HUDPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 580, height: 440)
+            contentRect: NSRect(x: 0, y: 0, width: 740, height: 480)
         )
         newPanel.contentView = hostingView
 
@@ -40,7 +40,7 @@ public final class PanelManager: ObservableObject {
         if let screen = targetScreen {
             let screenRect = screen.visibleFrame
             let x = screenRect.midX - (panel.frame.width / 2)
-            let y = screenRect.maxY - panel.frame.height - 100
+            let y = screenRect.maxY - panel.frame.height - 80
             panel.setFrameOrigin(NSPoint(x: x, y: y))
         }
 

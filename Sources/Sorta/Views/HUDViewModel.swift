@@ -9,7 +9,7 @@ public final class HUDViewModel: ObservableObject {
     @Published public var isFilterPinnedOnly: Bool = false
     @Published public var selectedIndex: Int = 0
 
-    private weak var watcher: PasteboardWatcher?
+    public weak var watcher: PasteboardWatcher?
     private var cancellables = Set<AnyCancellable>()
 
     public init(watcher: PasteboardWatcher) {
@@ -43,6 +43,14 @@ public final class HUDViewModel: ObservableObject {
         return ClipCategory.allCases.filter { present.contains($0) }
     }
 
+    public var currentSelectedItem: ClipItem? {
+        let items = filteredHistory
+        if selectedIndex >= 0 && selectedIndex < items.count {
+            return items[selectedIndex]
+        }
+        return watcher?.currentItem ?? items.first
+    }
+
     public func handleKeyDown(event: NSEvent) -> Bool {
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
 
@@ -52,19 +60,7 @@ public final class HUDViewModel: ObservableObject {
             return true
         }
 
-        // 2. Number Keys 1..9 (when search bar is empty and no modifiers)
-        if modifiers.isEmpty, let chars = event.charactersIgnoringModifiers, let num = Int(chars), num >= 1 && num <= 9 {
-            if searchQuery.isEmpty {
-                if let options = watcher?.currentOptions, num - 1 < options.count {
-                    let option = options[num - 1]
-                    watcher?.applyTransformAndPaste(option: option)
-                    PanelManager.shared.hidePanel()
-                    return true
-                }
-            }
-        }
-
-        // 3. Up / Down Arrows for History Navigation
+        // 2. Up / Down Arrows for History Navigation
         if event.keyCode == 126 { // Up Arrow
             if selectedIndex > 0 {
                 selectedIndex -= 1
@@ -78,36 +74,38 @@ public final class HUDViewModel: ObservableObject {
             return true
         }
 
-        // 4. Return / Enter -> Paste Selected
+        // 3. Return / Enter -> Paste Selected
         if event.keyCode == 36 { // Enter
-            let items = filteredHistory
-            if selectedIndex >= 0 && selectedIndex < items.count {
-                let item = items[selectedIndex]
+            if let item = currentSelectedItem {
                 watcher?.pasteRawItem(item)
                 PanelManager.shared.hidePanel()
                 return true
-            } else if let current = watcher?.currentItem {
-                watcher?.pasteRawItem(current)
+            }
+        }
+
+        // 4. Cmd + C -> Copy Selected to clipboard
+        if modifiers == .command && event.keyCode == 8 { // C
+            if let item = currentSelectedItem {
+                watcher?.copyToClipboard(content: item.rawContent)
                 PanelManager.shared.hidePanel()
                 return true
             }
         }
 
         // 5. Cmd + P or Cmd + S -> Toggle Pin on selected item
-        if (modifiers == .command && (event.keyCode == 35 || event.keyCode == 1)) { // P or S
-            let items = filteredHistory
-            if selectedIndex >= 0 && selectedIndex < items.count {
-                watcher?.togglePin(item: items[selectedIndex])
+        if modifiers == .command && (event.keyCode == 35 || event.keyCode == 1) { // P or S
+            if let item = currentSelectedItem {
+                watcher?.togglePin(item: item)
                 return true
             }
         }
 
         // 6. Cmd + Backspace -> Delete selected item
         if modifiers == .command && event.keyCode == 51 { // Delete
-            let items = filteredHistory
-            if selectedIndex >= 0 && selectedIndex < items.count {
-                watcher?.delete(item: items[selectedIndex])
-                if selectedIndex >= items.count - 1 && selectedIndex > 0 {
+            if let item = currentSelectedItem {
+                watcher?.delete(item: item)
+                let items = filteredHistory
+                if selectedIndex >= items.count && selectedIndex > 0 {
                     selectedIndex -= 1
                 }
                 return true
