@@ -10,7 +10,6 @@ public final class TransformerRegistry {
         CURLTransformer(),
         URLCleanerTransformer(),
         JWTTransformer(),
-        LineSorterTransformer(),
         TimestampTransformer(),
         ColorTransformer(),
         Base64Transformer(),

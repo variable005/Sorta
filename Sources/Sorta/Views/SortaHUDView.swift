@@ -338,7 +338,7 @@ struct StandardTextCard: View {
     let category: ClipCategory
 
     var isMonospaced: Bool {
-        category == .json || category == .curl || category == .jwt || category == .sort
+        category == .json || category == .curl || category == .jwt
     }
 
     var body: some View {
