@@ -142,10 +142,18 @@ struct CompactHistoryRow: View {
     var body: some View {
         Button(action: onSelect) {
             HStack(spacing: 8) {
-                Image(systemName: item.category.systemImageName)
-                    .font(.system(size: 11))
-                    .foregroundColor(isSelected ? .primary : .secondary)
-                    .frame(width: 16)
+                if item.isImage, let data = item.imageData, let img = NSImage(data: data) {
+                    Image(nsImage: img)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 18, height: 18)
+                        .cornerRadius(3)
+                } else {
+                    Image(systemName: item.category.systemImageName)
+                        .font(.system(size: 11))
+                        .foregroundColor(isSelected ? .primary : .secondary)
+                        .frame(width: 16)
+                }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(item.rawContent.trimmingCharacters(in: .whitespacesAndNewlines))

@@ -9,7 +9,7 @@ public final class PasteboardWatcher: ObservableObject {
     @Published public private(set) var currentOptions: [TransformOption] = []
     @Published public private(set) var history: [ClipItem] = []
 
-    private let storageKey = "Sorta_ClipboardHistory_v2"
+    private let storageKey = "Sorta_ClipboardHistory_v3"
     private var lastChangeCount: Int = -1
     private var timer: Timer?
 
@@ -47,11 +47,43 @@ public final class PasteboardWatcher: ObservableObject {
             return
         }
 
+        // 2. Check for copied image (PNG / TIFF / Image Object)
+        if let pngData = pasteboard.data(forType: .png) ?? extractPNGData(from: pasteboard) {
+            if let image = NSImage(data: pngData) {
+                let width = Int(image.size.width)
+                let height = Int(image.size.height)
+                let dimensions = "\(width) × \(height)"
+                let desc = "Image (\(dimensions))"
+
+                let newItem = ClipItem(
+                    rawContent: desc,
+                    category: .image,
+                    createdAt: Date(),
+                    imageData: pngData,
+                    imageDimensions: dimensions
+                )
+
+                self.currentItem = newItem
+                self.currentCategory = .image
+                self.currentOptions = []
+
+                if history.first?.imageData != pngData {
+                    history.insert(newItem, at: 0)
+                    if history.count > 50 {
+                        history.removeLast()
+                    }
+                    saveState()
+                }
+                return
+            }
+        }
+
+        // 3. Check for copied text string
         guard let newString = pasteboard.string(forType: .string), !newString.isEmpty else {
             return
         }
 
-        // 2. Sensitive Data Handling
+        // 4. Sensitive Data Handling
         let isSensitive = PrivacyGuard.shared.isSensitiveContent(newString)
         let displayContent = isSensitive ? PrivacyGuard.shared.maskSensitiveContent(newString) : newString
 
@@ -63,7 +95,7 @@ public final class PasteboardWatcher: ObservableObject {
             }
         }
 
-        // 3. Inspect and classify
+        // 5. Inspect and classify
         let (category, options) = TransformerRegistry.shared.inspect(content: newString)
 
         let newItem = ClipItem(
@@ -76,7 +108,7 @@ public final class PasteboardWatcher: ObservableObject {
         self.currentCategory = category
         self.currentOptions = options
 
-        // 4. Update History (Deduplicate consecutive identical items)
+        // 6. Update History (Deduplicate consecutive identical items)
         if history.first?.rawContent != displayContent {
             history.insert(newItem, at: 0)
             if history.count > 50 {
@@ -121,8 +153,22 @@ public final class PasteboardWatcher: ObservableObject {
     }
 
     public func pasteRawItem(_ item: ClipItem) {
-        copyToClipboard(content: item.rawContent)
+        copyItemToClipboard(item)
         simulateCmdV()
+    }
+
+    public func copyItemToClipboard(_ item: ClipItem) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+
+        if item.category == .image, let data = item.imageData, let img = NSImage(data: data) {
+            pasteboard.writeObjects([img])
+            pasteboard.setData(data, forType: .png)
+        } else {
+            pasteboard.setString(item.rawContent, forType: .string)
+        }
+
+        lastChangeCount = pasteboard.changeCount
     }
 
     public func copyToClipboard(content: String) {
@@ -130,6 +176,16 @@ public final class PasteboardWatcher: ObservableObject {
         pasteboard.clearContents()
         pasteboard.setString(content, forType: .string)
         lastChangeCount = pasteboard.changeCount
+    }
+
+    private func extractPNGData(from pasteboard: NSPasteboard) -> Data? {
+        if let image = NSImage(pasteboard: pasteboard),
+           let tiffData = image.tiffRepresentation,
+           let bitmap = NSBitmapImageRep(data: tiffData),
+           let png = bitmap.representation(using: .png, properties: [:]) {
+            return png
+        }
+        return nil
     }
 
     private func simulateCmdV() {

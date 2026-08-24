@@ -128,9 +128,15 @@ public struct SortaHUDView: View {
                         .cornerRadius(5)
 
                         // Stats
-                        Text("\(item.rawContent.count) chars • \(item.rawContent.components(separatedBy: .newlines).count) lines")
-                            .font(.system(size: 10, weight: .regular))
-                            .foregroundColor(.secondary)
+                        if item.isImage {
+                            Text(formatImageStats(item))
+                                .font(.system(size: 10, weight: .regular))
+                                .foregroundColor(.secondary)
+                        } else {
+                            Text("\(item.rawContent.count) chars • \(item.rawContent.components(separatedBy: .newlines).count) lines")
+                                .font(.system(size: 10, weight: .regular))
+                                .foregroundColor(.secondary)
+                        }
 
                         Spacer()
 
@@ -151,7 +157,7 @@ public struct SortaHUDView: View {
 
                             // Copy
                             Button(action: {
-                                watcher.copyToClipboard(content: item.rawContent)
+                                watcher.copyItemToClipboard(item)
                                 PanelManager.shared.hidePanel()
                             }) {
                                 HStack(spacing: 4) {
@@ -196,18 +202,36 @@ public struct SortaHUDView: View {
                     Divider()
                         .background(Color.white.opacity(0.08))
 
-                    // FULL CONTENT BODY (Vertical scroll only, natural multiline text wrapping)
-                    ScrollView(.vertical, showsIndicators: true) {
-                        Text(item.rawContent)
-                            .font(.system(size: 13, design: fontDesignForCategory(item.category)))
-                            .foregroundColor(.white.opacity(0.95))
-                            .lineSpacing(5)
-                            .multilineTextAlignment(.leading)
-                            .textSelection(.enabled)
-                            .padding(16)
-                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                    // FULL CONTENT BODY
+                    if item.isImage, let data = item.imageData, let nsImage = NSImage(data: data) {
+                        // Image Viewer
+                        ScrollView([.vertical, .horizontal]) {
+                            VStack {
+                                Image(nsImage: nsImage)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .cornerRadius(6)
+                                    .shadow(color: Color.black.opacity(0.35), radius: 8, x: 0, y: 4)
+                                    .padding(18)
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.black.opacity(0.20))
+                    } else {
+                        // Text Viewer (Vertical scroll only, natural multiline text wrapping)
+                        ScrollView(.vertical, showsIndicators: true) {
+                            Text(item.rawContent)
+                                .font(.system(size: 13, design: fontDesignForCategory(item.category)))
+                                .foregroundColor(.white.opacity(0.95))
+                                .lineSpacing(5)
+                                .multilineTextAlignment(.leading)
+                                .textSelection(.enabled)
+                                .padding(16)
+                                .frame(maxWidth: .infinity, alignment: .topLeading)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                     Divider()
                         .background(Color.white.opacity(0.08))
@@ -267,6 +291,21 @@ public struct SortaHUDView: View {
                 return viewModel.handleKeyDown(event: event)
             }
         )
+    }
+
+    private func formatImageStats(_ item: ClipItem) -> String {
+        var parts: [String] = []
+        if let dims = item.imageDimensions {
+            parts.append(dims)
+        }
+        if let count = item.imageData?.count {
+            if count > 1024 * 1024 {
+                parts.append(String(format: "%.1f MB", Double(count) / (1024.0 * 1024.0)))
+            } else {
+                parts.append("\(count / 1024) KB")
+            }
+        }
+        return parts.joined(separator: " • ")
     }
 
     private func fontDesignForCategory(_ category: ClipCategory) -> Font.Design {

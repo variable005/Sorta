@@ -1,6 +1,7 @@
 import Foundation
 
 public enum ClipCategory: String, Codable, CaseIterable, Identifiable {
+    case image = "Image"
     case url = "URL"
     case json = "JSON"
     case curl = "cURL"
@@ -15,6 +16,7 @@ public enum ClipCategory: String, Codable, CaseIterable, Identifiable {
 
     public var systemImageName: String {
         switch self {
+        case .image: return "photo"
         case .url: return "link"
         case .json: return "curlybraces"
         case .curl: return "terminal"
