@@ -12,10 +12,10 @@ public struct SortaHUDView: View {
 
     public var body: some View {
         HStack(spacing: 0) {
-            // OPTIONAL SIDEBAR: History Drawer
+            // OPTIONAL SIDEBAR: Liquid Glass History Drawer
             if viewModel.isSidebarVisible {
                 VStack(spacing: 0) {
-                    // Search Bar
+                    // Search Bar Lens
                     HStack(spacing: 8) {
                         Image(systemName: "magnifyingglass")
                             .foregroundColor(.secondary)
@@ -36,7 +36,7 @@ public struct SortaHUDView: View {
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 8)
-                    .background(Color(nsColor: .controlBackgroundColor).opacity(0.4))
+                    .background(Color(nsColor: .controlBackgroundColor).opacity(0.35))
 
                     Divider()
 
@@ -81,12 +81,12 @@ public struct SortaHUDView: View {
                 Divider()
             }
 
-            // MAIN AREA: Full Content Viewer
+            // MAIN AREA: Liquid Glass HUD Canvas
             VStack(spacing: 0) {
                 if let item = viewModel.currentSelectedItem {
-                    // Top Header Bar
+                    // Top Header Bar with Liquid Glass Lenses
                     HStack(spacing: 8) {
-                        // Toggle Sidebar Button
+                        // Toggle Sidebar Lens
                         Button(action: {
                             withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
                                 viewModel.isSidebarVisible.toggle()
@@ -95,39 +95,42 @@ public struct SortaHUDView: View {
                             Image(systemName: viewModel.isSidebarVisible ? "sidebar.left" : "clock.arrow.circlepath")
                                 .font(.system(size: 11))
                                 .foregroundColor(viewModel.isSidebarVisible ? .primary : .secondary)
-                                .frame(width: 26, height: 26)
-                                .background(Color.white.opacity(viewModel.isSidebarVisible ? 0.15 : (viewModel.isHovering ? 0.08 : 0.0)))
-                                .cornerRadius(6)
+                                .frame(width: 28, height: 28)
+                                .background(
+                                    LiquidGlassLens(cornerRadius: 7, isHighlighted: viewModel.isSidebarVisible)
+                                )
                         }
                         .buttonStyle(.plain)
 
-                        // Category Icon
+                        // Category Icon Lens
                         Image(systemName: item.category.systemImageName)
                             .font(.system(size: 11, weight: .medium))
                             .foregroundColor(.secondary)
-                            .frame(width: 26, height: 26)
-                            .background(Color.white.opacity(0.08))
-                            .cornerRadius(6)
+                            .frame(width: 28, height: 28)
+                            .background(
+                                LiquidGlassLens(cornerRadius: 7, isHighlighted: false)
+                            )
 
                         Spacer(minLength: 12)
 
-                        // Action Buttons (Reveals on Hover)
+                        // Action Lenses (Fluid Morph on Hover)
                         HStack(spacing: 6) {
-                            // Copy Button
+                            // Copy Lens Button
                             Button(action: {
                                 viewModel.copyWithAnimation(item: item)
                             }) {
                                 Image(systemName: viewModel.justCopied ? "checkmark" : "doc.on.doc")
                                     .font(.system(size: 11, weight: viewModel.justCopied ? .bold : .regular))
-                                    .foregroundColor(viewModel.justCopied ? .green : .secondary)
-                                    .frame(width: 26, height: 26)
-                                    .background(Color.white.opacity(viewModel.justCopied ? 0.18 : 0.08))
-                                    .cornerRadius(6)
+                                    .foregroundColor(viewModel.justCopied ? .green : .primary)
+                                    .frame(width: 28, height: 28)
+                                    .background(
+                                        LiquidGlassLens(cornerRadius: 7, isHighlighted: viewModel.justCopied)
+                                    )
                                     .animation(.spring(response: 0.2, dampingFraction: 0.8), value: viewModel.justCopied)
                             }
                             .buttonStyle(.plain)
 
-                            // Paste Button
+                            // Paste Lens Button
                             Button(action: {
                                 watcher.pasteRawItem(item)
                                 PanelManager.shared.hidePanel()
@@ -135,9 +138,9 @@ public struct SortaHUDView: View {
                                 Image(systemName: "return")
                                     .font(.system(size: 11, weight: .bold))
                                     .foregroundColor(.black)
-                                    .frame(width: 26, height: 26)
+                                    .frame(width: 28, height: 28)
                                     .background(Color.white)
-                                    .cornerRadius(6)
+                                    .cornerRadius(7)
                             }
                             .buttonStyle(.plain)
                         }
@@ -153,7 +156,7 @@ public struct SortaHUDView: View {
                     // Main Content View
                     VStack {
                         if item.isImage, let data = item.imageData, let nsImage = NSImage(data: data) {
-                            // Perfectly Arranged Aspect-Fitted Draggable Image
+                            // Aspect-Fitted Draggable Image on Liquid Glass
                             NativeDraggableImageView(item: item, image: nsImage, cornerRadius: 8)
                                 .aspectRatio(nsImage.size.width / max(nsImage.size.height, 1), contentMode: .fit)
                                 .frame(maxWidth: 510, maxHeight: 330)
@@ -188,7 +191,7 @@ public struct SortaHUDView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(width: viewModel.isSidebarVisible ? 720 : 580, height: 420)
-        .background(VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow))
+        .background(LiquidGlassEffectView(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .stroke(Color.white.opacity(0.14), lineWidth: 1)
@@ -203,6 +206,33 @@ public struct SortaHUDView: View {
             KeyEventHandlerView { event in
                 return viewModel.handleKeyDown(event: event)
             }
+        )
+    }
+}
+
+/// Dynamic Liquid Glass Lens for native controls
+struct LiquidGlassLens: View {
+    let cornerRadius: CGFloat
+    let isHighlighted: Bool
+
+    var body: some View {
+        ZStack {
+            LiquidGlassEffectView(cornerRadius: cornerRadius)
+                .opacity(0.85)
+
+            if isHighlighted {
+                Color.white.opacity(0.16)
+            } else {
+                Color.white.opacity(0.06)
+            }
+        }
+        .cornerRadius(cornerRadius)
+        .overlay(
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .stroke(
+                    isHighlighted ? Color.white.opacity(0.35) : Color.white.opacity(0.15),
+                    lineWidth: 1
+                )
         )
     }
 }
@@ -745,23 +775,37 @@ public enum DragItemProviderHelper {
     }
 }
 
-/// Native macOS AppKit Visual Effect Blur
-struct VisualEffectBlur: NSViewRepresentable {
-    var material: NSVisualEffectView.Material
-    var blendingMode: NSVisualEffectView.BlendingMode
+/// Native macOS AppKit Liquid Glass Effect View
+/// Dynamically uses NSGlassEffectView where available in macOS SDK, with automatic VisualEffect fallback
+public struct LiquidGlassEffectView: NSViewRepresentable {
+    public var cornerRadius: CGFloat = 12
 
-    func makeNSView(context: Context) -> NSVisualEffectView {
+    public init(cornerRadius: CGFloat = 12) {
+        self.cornerRadius = cornerRadius
+    }
+
+    public func makeNSView(context: Context) -> NSView {
+        // Instantiate NSGlassEffectView dynamically if supported in macOS runtime
+        if let glassClass = NSClassFromString("NSGlassEffectView") as? NSView.Type {
+            let glassView = glassClass.init()
+            glassView.wantsLayer = true
+            glassView.layer?.cornerRadius = cornerRadius
+            glassView.layer?.masksToBounds = true
+            return glassView
+        }
+
         let visualEffectView = NSVisualEffectView()
-        visualEffectView.material = material
-        visualEffectView.blendingMode = blendingMode
+        visualEffectView.material = .hudWindow
+        visualEffectView.blendingMode = .behindWindow
         visualEffectView.state = .active
         visualEffectView.wantsLayer = true
+        visualEffectView.layer?.cornerRadius = cornerRadius
+        visualEffectView.layer?.masksToBounds = true
         return visualEffectView
     }
 
-    func updateNSView(_ visualEffectView: NSVisualEffectView, context: Context) {
-        visualEffectView.material = material
-        visualEffectView.blendingMode = blendingMode
+    public func updateNSView(_ nsView: NSView, context: Context) {
+        nsView.layer?.cornerRadius = cornerRadius
     }
 }
 
