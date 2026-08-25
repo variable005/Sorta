@@ -74,6 +74,21 @@ public final class PasteboardWatcher: ObservableObject {
                     }
                     saveState()
                 }
+
+                // Asynchronously extract on-device text using Apple Vision / Neural Engine
+                let targetId = newItem.id
+                ImageOCRService.extractText(from: pngData) { [weak self] recognizedText in
+                    guard let self = self, let text = recognizedText, !text.isEmpty else { return }
+                    DispatchQueue.main.async {
+                        if let idx = self.history.firstIndex(where: { $0.id == targetId }) {
+                            self.history[idx].extractedText = text
+                            if self.currentItem?.id == targetId {
+                                self.currentItem?.extractedText = text
+                            }
+                            self.saveState()
+                        }
+                    }
+                }
                 return
             }
         }

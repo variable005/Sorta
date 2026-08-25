@@ -9,6 +9,7 @@ public struct ClipItem: Identifiable, Equatable, Codable, Hashable {
     public var isPinned: Bool
     public var imageData: Data?
     public var imageDimensions: String?
+    public var extractedText: String?
 
     public var category: ClipCategory {
         ClipCategory(rawValue: categoryRaw) ?? .text
@@ -26,7 +27,8 @@ public struct ClipItem: Identifiable, Equatable, Codable, Hashable {
         lastTransformedContent: String? = nil,
         isPinned: Bool = false,
         imageData: Data? = nil,
-        imageDimensions: String? = nil
+        imageDimensions: String? = nil,
+        extractedText: String? = nil
     ) {
         self.id = id
         self.rawContent = rawContent
@@ -36,5 +38,6 @@ public struct ClipItem: Identifiable, Equatable, Codable, Hashable {
         self.isPinned = isPinned
         self.imageData = imageData
         self.imageDimensions = imageDimensions
+        self.extractedText = extractedText
     }
 }

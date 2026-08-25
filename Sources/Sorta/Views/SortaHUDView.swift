@@ -21,7 +21,7 @@ public struct SortaHUDView: View {
                             .foregroundColor(.secondary)
                             .font(.system(size: 12))
 
-                        TextField("Search...", text: $viewModel.searchQuery)
+                        TextField("Search text or OCR in images...", text: $viewModel.searchQuery)
                             .textFieldStyle(.plain)
                             .font(.system(size: 12))
 
@@ -115,6 +115,23 @@ public struct SortaHUDView: View {
 
                         // Action Lenses (Fluid Morph on Hover)
                         HStack(spacing: 6) {
+                            // Extract OCR Text Lens (if image has text)
+                            if item.isImage, let extracted = item.extractedText, !extracted.isEmpty {
+                                Button(action: {
+                                    viewModel.copyExtractedText(item: item)
+                                }) {
+                                    Image(systemName: "text.viewfinder")
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundColor(.primary)
+                                        .frame(width: 28, height: 28)
+                                        .background(
+                                            LiquidGlassLens(cornerRadius: 7, isHighlighted: false)
+                                        )
+                                }
+                                .buttonStyle(.plain)
+                                .help("Copy Extracted Text (Live Text OCR)")
+                            }
+
                             // Copy Lens Button
                             Button(action: {
                                 viewModel.copyWithAnimation(item: item)
@@ -156,18 +173,100 @@ public struct SortaHUDView: View {
                     // Main Content View
                     VStack {
                         if item.isImage, let data = item.imageData, let nsImage = NSImage(data: data) {
-                            // Aspect-Fitted Draggable Image on Liquid Glass
-                            NativeDraggableImageView(item: item, image: nsImage, cornerRadius: 8)
-                                .aspectRatio(nsImage.size.width / max(nsImage.size.height, 1), contentMode: .fit)
-                                .frame(maxWidth: 510, maxHeight: 330)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
-                                )
-                                .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 5)
-                                .padding(16)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            VStack(spacing: 8) {
+                                if viewModel.showLiveTextView, let ocrText = item.extractedText, !ocrText.isEmpty {
+                                    // Live Text OCR Inspector View
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        HStack {
+                                            Text("Recognized Live Text")
+                                                .font(.system(size: 11, weight: .semibold))
+                                                .foregroundColor(.secondary)
+
+                                            Spacer()
+
+                                            Button(action: {
+                                                withAnimation(.spring(response: 0.2, dampingFraction: 0.85)) {
+                                                    viewModel.showLiveTextView = false
+                                                }
+                                            }) {
+                                                HStack(spacing: 3) {
+                                                    Image(systemName: "photo")
+                                                        .font(.system(size: 9))
+                                                    Text("View Image")
+                                                        .font(.system(size: 10))
+                                                }
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 3)
+                                                .background(Color.white.opacity(0.1))
+                                                .cornerRadius(4)
+                                            }
+                                            .buttonStyle(.plain)
+                                        }
+                                        .padding(.horizontal, 4)
+
+                                        ScrollView([.vertical, .horizontal], showsIndicators: true) {
+                                            Text(ocrText)
+                                                .font(.system(size: 12.5, weight: .regular, design: .monospaced))
+                                                .foregroundColor(.primary)
+                                                .lineSpacing(4)
+                                                .textSelection(.enabled)
+                                                .padding(12)
+                                                .frame(maxWidth: .infinity, alignment: .topLeading)
+                                        }
+                                        .background(Color.white.opacity(0.04))
+                                        .cornerRadius(8)
+                                    }
+                                    .padding(16)
+                                } else {
+                                    // Aspect-Fitted Draggable Image on Liquid Glass
+                                    ZStack(alignment: .bottomTrailing) {
+                                        NativeDraggableImageView(item: item, image: nsImage, cornerRadius: 8)
+                                            .aspectRatio(nsImage.size.width / max(nsImage.size.height, 1), contentMode: .fit)
+                                            .frame(maxWidth: 510, maxHeight: 330)
+                                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                                            )
+                                            .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 5)
+
+                                        // Live Text Toggle Badge (if OCR text detected)
+                                        if let ocrText = item.extractedText, !ocrText.isEmpty {
+                                            Button(action: {
+                                                withAnimation(.spring(response: 0.2, dampingFraction: 0.85)) {
+                                                    viewModel.showLiveTextView = true
+                                                }
+                                            }) {
+                                                HStack(spacing: 4) {
+                                                    Image(systemName: "text.viewfinder")
+                                                        .font(.system(size: 9, weight: .bold))
+                                                    Text("Live Text")
+                                                        .font(.system(size: 10, weight: .medium))
+                                                }
+                                                .foregroundColor(.white)
+                                                .padding(.horizontal, 8)
+                                                .padding(.vertical, 4)
+                                                .background(
+                                                    LinearGradient(
+                                                        colors: [Color.black.opacity(0.75), Color.black.opacity(0.55)],
+                                                        startPoint: .top,
+                                                        endPoint: .bottom
+                                                    )
+                                                )
+                                                .cornerRadius(5)
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 5)
+                                                        .stroke(Color.white.opacity(0.25), lineWidth: 0.8)
+                                                )
+                                            }
+                                            .buttonStyle(.plain)
+                                            .padding(10)
+                                        }
+                                    }
+                                    .padding(16)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                         } else {
                             NativeTextContentView(item: item, watcher: watcher)
                         }

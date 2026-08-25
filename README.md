@@ -67,9 +67,12 @@ Dot-separated three-part JWT strings are split, Base64URL decoded with padding c
 ### UNIX Timestamps
 Numeric timestamp values (10-digit seconds and 13-digit milliseconds) and ISO-8601 strings are converted to localized human-readable dates, absolute time representations, and relative elapsed time descriptions.
 
+### Live Text and On-Device Image OCR
+When an image or screenshot is captured, SORTA runs an asynchronous Apple Vision (`VNRecognizeTextRequest`) pass using the local Neural Engine. Extracted text is indexed for real-time fuzzy history search and can be copied directly via the Live Text inspector without third-party OCR utilities.
+
 | Category | Input Criteria | Output / Features |
 | :--- | :--- | :--- |
-| **Image** | Pasteboard image data | Tight aspect-ratio framing, zero-letterboxing canvas, multi-format AppKit drag export |
+| **Image** | Pasteboard image data | On-device Live Text OCR extraction, searchable text within screenshots, tight aspect framing, multi-format drag export |
 | **JSON** | `{ ... }` or `[ ... ]` strings | Formatted 2-space indented hierarchy, sorted keys, syntax validation |
 | **URL** | `http://` or `https://` URLs | Parsed host badge, path indicators, isolated query parameter table, tracking sanitization |
 | **Color** | `#RRGGBB`, `rgb(...)` strings | Live color swatch, conversions to Hex, RGB, and SwiftUI `Color(red:green:blue:)` |

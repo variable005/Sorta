@@ -11,6 +11,7 @@ public final class HUDViewModel: ObservableObject {
     @Published public var isSidebarVisible: Bool = false
     @Published public var isHovering: Bool = false
     @Published public var justCopied: Bool = false
+    @Published public var showLiveTextView: Bool = false
 
     public weak var watcher: PasteboardWatcher?
     private var cancellables = Set<AnyCancellable>()
@@ -35,7 +36,9 @@ public final class HUDViewModel: ObservableObject {
         return history.filter { item in
             let matchesPinned = !isFilterPinnedOnly || item.isPinned
             let matchesCategory = selectedCategory == nil || item.category == selectedCategory
-            let matchesSearch = searchQuery.isEmpty || item.rawContent.localizedCaseInsensitiveContains(searchQuery)
+            let matchesSearch = searchQuery.isEmpty ||
+                item.rawContent.localizedCaseInsensitiveContains(searchQuery) ||
+                (item.extractedText?.localizedCaseInsensitiveContains(searchQuery) == true)
             return matchesPinned && matchesCategory && matchesSearch
         }
     }
@@ -65,6 +68,18 @@ public final class HUDViewModel: ObservableObject {
         }
     }
 
+    public func copyExtractedText(item: ClipItem) {
+        guard let text = item.extractedText, !text.isEmpty else { return }
+        watcher?.copyToClipboard(content: text)
+        withAnimation(.spring(response: 0.22, dampingFraction: 0.75)) {
+            justCopied = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) { [weak self] in
+            PanelManager.shared.hidePanel()
+            self?.justCopied = false
+        }
+    }
+
     public func handleKeyDown(event: NSEvent) -> Bool {
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
 
@@ -83,31 +98,24 @@ public final class HUDViewModel: ObservableObject {
         }
 
         // 3. Up / Down Arrows for History Navigation
-        if event.keyCode == 126 { // Up Arrow
-            if !isSidebarVisible {
-                withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) { isSidebarVisible = true }
-            }
-            if selectedIndex > 0 {
-                withAnimation(.spring(response: 0.18, dampingFraction: 0.88)) {
+        if event.keyCode == 126 { // Up arrow
+            withAnimation(.spring(response: 0.18, dampingFraction: 0.85)) {
+                if selectedIndex > 0 {
                     selectedIndex -= 1
                 }
             }
             return true
-        } else if event.keyCode == 125 { // Down Arrow
-            if !isSidebarVisible {
-                withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) { isSidebarVisible = true }
-            }
-            let count = filteredHistory.count
-            if selectedIndex < count - 1 {
-                withAnimation(.spring(response: 0.18, dampingFraction: 0.88)) {
+        } else if event.keyCode == 125 { // Down arrow
+            withAnimation(.spring(response: 0.18, dampingFraction: 0.85)) {
+                if selectedIndex < filteredHistory.count - 1 {
                     selectedIndex += 1
                 }
             }
             return true
         }
 
-        // 4. Return / Enter -> Paste Selected
-        if event.keyCode == 36 { // Enter
+        // 4. Return -> Paste Current Item
+        if event.keyCode == 36 { // Return
             if let item = currentSelectedItem {
                 watcher?.pasteRawItem(item)
                 PanelManager.shared.hidePanel()
@@ -115,33 +123,11 @@ public final class HUDViewModel: ObservableObject {
             }
         }
 
-        // 5. Cmd + C -> Copy Selected with animated feedback
-        if modifiers == .command && event.keyCode == 8 { // C
-            if let item = currentSelectedItem {
-                copyWithAnimation(item: item)
-                return true
-            }
-        }
-
-        // 6. Cmd + P or Cmd + S -> Toggle Pin on selected item
-        if modifiers == .command && (event.keyCode == 35 || event.keyCode == 1) { // P or S
-            if let item = currentSelectedItem {
-                withAnimation(.spring(response: 0.24, dampingFraction: 0.52)) {
-                    watcher?.togglePin(item: item)
-                }
-                return true
-            }
-        }
-
-        // 7. Cmd + Backspace -> Delete selected item
+        // 5. Cmd + Backspace -> Delete Item
         if modifiers == .command && event.keyCode == 51 { // Delete
             if let item = currentSelectedItem {
-                withAnimation(.spring(response: 0.22, dampingFraction: 0.85)) {
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.85)) {
                     watcher?.delete(item: item)
-                    let items = filteredHistory
-                    if selectedIndex >= items.count && selectedIndex > 0 {
-                        selectedIndex -= 1
-                    }
                 }
                 return true
             }
