@@ -4,73 +4,84 @@
 
 # SORTA
 
-> **Smart, instant, zero-click macOS clipboard transformations & history for modern developers.**
-
-SORTA transforms your macOS clipboard from a passive string buffer into an intelligent developer HUD. Built natively in Swift, SwiftUI, and AppKit, SORTA runs silently in the background, inspects copied text in real time, auto-detects the content type, and provides single-keystroke transformations before you paste.
+Smart, instant, zero-click macOS clipboard inspector and developer HUD. Built natively in Swift, SwiftUI, and AppKit. Runs silently in the background, inspects clipboard contents in real time, classifies data types, formats payloads, and enables drag-and-drop file operations into active apps.
 
 ---
 
-## ⚡️ Key Features
+## Overview
 
-* **Instant Developer Transformations**: Copy raw JSON, tracking URLs, cURL requests, JWT tokens, timestamps, or multi-line lists. Press `Option + Space`, press `1`–`4`, and paste transformed code directly into your editor.
-* **Keyboard-First HUD**:
-  * `Option + Space` — Open/Toggle HUD overlay.
-  * `1`–`9` — Execute smart action and paste directly into focused app.
-  * `↑` / `↓` — Navigate history items.
-  * `Enter` — Paste selected item.
-  * `Cmd + P` / `Cmd + S` — Toggle pin (⭐️) on selected snippet.
-  * `Cmd + Backspace` — Delete item.
-  * `Esc` — Dismiss HUD.
-* **Persistent History & Search**: Instant fuzzy filtering with category pills (`JSON`, `cURL`, `URL`, `List / Lines`, `Pinned ⭐️`).
-* **100% Local & Privacy-First**: Zero analytics, zero telemetry. Automatically ignores password managers (1Password, Bitwarden, KeePassXC, Keychain Access) and masks API keys/credentials (`AKIA...`, `ghp_...`, `sk-proj-...`).
-
----
-
-## 🛠 Core Transformation Engines
-
-| Category | Input Detection | Primary Transformations |
-| :--- | :--- | :--- |
-| **URL** | `http://` or `https://` URLs | Strip tracking parameters (`utm_*`, `fbclid`, `si`, `ref`), decode percent-encoding, extract domain host. |
-| **JSON** | Valid JSON `{ ... }` or `[ ... ]` | Prettify (2-space indented & sorted keys), Minify, TypeScript `interface`, Swift `Codable` struct. |
-| **cURL** | CLI `curl ...` command | Modern async JS `fetch()`, Python `requests`, Swift `URLSession` request. |
-| **List / Lines** | Multi-line text or inline lists | Natural alphanumeric sort (A-Z), reverse sort (Z-A), unique deduplication, inline list sort. |
-| **JWT** | 3-part Base64URL token | Decoded formatted Payload JSON & Header JSON. |
-| **Timestamp** | 10-digit (s) or 13-digit (ms) UNIX epoch | ISO-8601 UTC timestamp, local date & time, relative time description. |
-| **Color** | Hex (`#FF5733`) or `rgb(...)` | SwiftUI `Color`, AppKit `NSColor`, CSS `rgb()`, uppercase Hex. |
-| **Base64** | Base64 string / plain text | Base64 decode to UTF-8 text, Base64 encode. |
-| **Plain Text** | Any string content | Strip zero-width whitespace (`\u{200B}`), smart curly quotes sanitization, UPPERCASE, lowercase, Title Case. |
-
----
-
-## ⌨️ Global Shortcuts & Navigation
-
-| Keystroke | Action |
+| Component | Specification |
 | :--- | :--- |
-| **Tap `Control` 3x** / `Option + Space` | Toggle SORTA HUD |
-| `1`, `2`, `3`, `4` | Select smart action & auto-paste into active app |
-| `↑` / `↓` | Navigate clipboard history |
-| `Enter` | Paste selected history snippet |
-| `Cmd + P` / `Cmd + S` | Pin / unpin selected snippet |
-| `Cmd + Backspace` | Delete selected snippet from history |
-| `Esc` | Dismiss HUD overlay |
+| **Platform** | macOS Native (AppKit + SwiftUI) |
+| **Execution Model** | Background Daemon + Floating Utility Panel |
+| **Activation** | Menu Bar Left Click / Triple-Tap `Control` / `Option + Space` |
+| **Data Retention** | Ephemeral Local Memory Cache |
+| **Telemetry** | None (Zero Analytics, Zero External Network Calls) |
 
 ---
 
-## 📦 Building from Source
+## Capabilities
 
-### Requirements
-- **macOS**: 14.0 (Sonoma) or later
-- **Swift**: 5.9 or later / Xcode 15+
+| Feature | Description |
+| :--- | :--- |
+| **Direct Drag and Drop** | Drag copied images straight out of the panel into Finder, Figma, Slack, Discord, Chrome, VS Code, or Notes. Automatically packages PNG, TIFF, and file URL representations. |
+| **Instant Inspection** | Automatic payload analysis for JSON, URLs, Colors, JWT tokens, UNIX Timestamps, and Images without manual triggering. |
+| **History Drawer** | Collapsible sidebar drawer with category filtering, search querying, and item previews. |
+| **One-Click Actions** | Dedicated copy and paste buttons with instant visual feedback and smooth spring animations. |
+| **Privacy Protection** | Password managers are ignored automatically; sensitive credentials, private tokens, and API keys are masked before display. |
 
-### Build & Run
-```bash
-# Clone the repository
-git clone https://github.com/variable005/Sorta.git
-cd Sorta
+---
 
-# Build the project
-swift build
+## Data Handlers and Transformations
 
-# Run SORTA
-swift run
-```
+| Category | Input Criteria | Output / Features |
+| :--- | :--- | :--- |
+| **Image** | System Pasteboard Image Data | Aspect-fitted preview, direct AppKit drag-and-drop export, multi-format drop support (`public.png`, `TIFF`, file URL). |
+| **JSON** | `{ ... }` or `[ ... ]` payloads | Formatted 2-space indented hierarchy, sorted key structure, syntax validation, raw view toggle. |
+| **URL** | `http://` / `https://` schemes | Parsed domain host, path breakdown, isolated query parameter table, tracking parameter sanitization. |
+| **Color** | Hex `#RRGGBB`, `rgb(...)` strings | Live interactive color preview tile, instant conversions to HEX, RGB, and SwiftUI `Color` declarations. |
+| **Timestamp** | 10-digit (s) or 13-digit (ms) UNIX epoch | Human-readable full date, localized time, relative elapsed time indicator, raw epoch value. |
+| **JWT** | 3-part Base64URL dot-separated token | Decoded payload claims, formatted header JSON, expiry inspection. |
+| **Plain Text** | Generic string data | Clean typography presentation, monospaced formatting where appropriate, whitespace cleanup. |
+
+---
+
+## Controls and Shortcuts
+
+| Keystroke / Gesture | Context | Action |
+| :--- | :--- | :--- |
+| **Menu Bar Left Click** | Menu Bar | Toggle HUD Panel immediately |
+| **Menu Bar Right Click** | Menu Bar | Open Context Menu (Settings, Quit) |
+| **Tap `Control` 3x** | Global | Toggle HUD Panel |
+| **`Option + Space`** | Global | Toggle HUD Panel |
+| **`Tab`** | HUD Active | Toggle History Drawer |
+| **`↑` / `↓`** | HUD Active | Navigate items in History |
+| **`Return`** | HUD Active | Paste selected item into active application |
+| **`Esc`** | HUD Active | Dismiss HUD Panel |
+| **Click and Drag** | Image Preview | Drag image into other applications or Finder |
+
+---
+
+## Architecture
+
+| Layer | Technology | Function |
+| :--- | :--- | :--- |
+| **Watcher Engine** | AppKit `NSPasteboard` | Polling change count listener with debounce and sensitive app filtering. |
+| **HUD Window** | `NSPanel` | Floating non-activating transparent utility window with visual effect backing. |
+| **Renderer** | SwiftUI | Reactive view hierarchy driven by state observables. |
+| **Drag Engine** | `NSDraggingSource` | Custom AppKit dragging session with multi-type pasteboard registration. |
+| **Transformers** | Swift Engine | Pure deterministic transformation pipelines for URLs, JSON, JWT, and timestamps. |
+
+---
+
+## Security and Privacy
+
+| Area | Policy |
+| :--- | :--- |
+| **Password Managers** | Automatically ignores copies originating from 1Password, Bitwarden, KeePassXC, and Keychain Access. |
+| **Secret Masking** | Pattern matching for AWS credentials (`AKIA...`), GitHub Personal Access Tokens (`ghp_...`), OpenAI API keys (`sk-...`), and private keys. |
+| **Local Isolation** | All parsing and formatting occur strictly on-device in memory. No network connections are initiated. |
+
+---
+
+a project by hariom sharnam
