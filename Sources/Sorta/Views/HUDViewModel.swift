@@ -58,37 +58,43 @@ public final class HUDViewModel: ObservableObject {
         return watcher?.currentItem ?? items.first
     }
 
-    public func copyWithAnimation(item: ClipItem) {
+    public func copyWithAnimation(item: ClipItem, shouldClosePanel: Bool = false) {
         watcher?.copyItemToClipboard(item)
         withAnimation(.spring(response: 0.22, dampingFraction: 0.75)) {
             justCopied = true
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) { [weak self] in
-            PanelManager.shared.hidePanel()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+            if shouldClosePanel {
+                PanelManager.shared.hidePanel()
+            }
             self?.justCopied = false
         }
     }
 
-    public func copyExtractedText(item: ClipItem) {
+    public func copyExtractedText(item: ClipItem, shouldClosePanel: Bool = false) {
         guard let text = item.extractedText, !text.isEmpty else { return }
         watcher?.copyToClipboard(content: text)
         withAnimation(.spring(response: 0.22, dampingFraction: 0.75)) {
             justCopied = true
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) { [weak self] in
-            PanelManager.shared.hidePanel()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+            if shouldClosePanel {
+                PanelManager.shared.hidePanel()
+            }
             self?.justCopied = false
         }
     }
 
-    public func copyBarcodePayload(item: ClipItem) {
+    public func copyBarcodePayload(item: ClipItem, shouldClosePanel: Bool = false) {
         guard let barcode = item.decodedBarcode, !barcode.isEmpty else { return }
         watcher?.copyToClipboard(content: barcode)
         withAnimation(.spring(response: 0.22, dampingFraction: 0.75)) {
             justCopied = true
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) { [weak self] in
-            PanelManager.shared.hidePanel()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
+            if shouldClosePanel {
+                PanelManager.shared.hidePanel()
+            }
             self?.justCopied = false
         }
     }

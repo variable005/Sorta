@@ -275,8 +275,7 @@ public struct SortaHUDView: View {
                                                     withAnimation(.spring(response: 0.22, dampingFraction: 0.75)) {
                                                         viewModel.justCopied = true
                                                     }
-                                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) {
-                                                        PanelManager.shared.hidePanel()
+                                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                                                         viewModel.justCopied = false
                                                     }
                                                 }) {
