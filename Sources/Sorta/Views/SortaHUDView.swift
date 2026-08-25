@@ -101,54 +101,15 @@ public struct SortaHUDView: View {
                                 )
                         }
                         .buttonStyle(.plain)
+                        .help("Toggle Clipboard History (Tab / ⌘H)")
 
-                        // Category Icon Lens
-                        Image(systemName: item.category.systemImageName)
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(.secondary)
-                            .frame(width: 28, height: 28)
-                            .background(
-                                LiquidGlassLens(cornerRadius: 7, isHighlighted: false)
-                            )
+                        // Intelligent Contextual Super Button (QR, OCR, Format, Clean)
+                        SuperActionButton(item: item, viewModel: viewModel, watcher: watcher)
 
                         Spacer(minLength: 12)
 
                         // Action Lenses (Fluid Morph on Hover)
                         HStack(spacing: 6) {
-                            // QR / Barcode Payload Copy Lens (if detected)
-                            if item.isImage, let barcode = item.decodedBarcode, !barcode.isEmpty {
-                                Button(action: {
-                                    viewModel.copyBarcodePayload(item: item)
-                                }) {
-                                    Image(systemName: "qrcode.viewfinder")
-                                        .font(.system(size: 11, weight: .semibold))
-                                        .foregroundColor(.primary)
-                                        .frame(width: 28, height: 28)
-                                        .background(
-                                            LiquidGlassLens(cornerRadius: 7, isHighlighted: false)
-                                        )
-                                }
-                                .buttonStyle(.plain)
-                                .help("Copy Decoded \(item.barcodeType ?? "QR Code")")
-                            }
-
-                            // Extract OCR Text Lens (if image has text)
-                            if item.isImage, let extracted = item.extractedText, !extracted.isEmpty {
-                                Button(action: {
-                                    viewModel.copyExtractedText(item: item)
-                                }) {
-                                    Image(systemName: "text.viewfinder")
-                                        .font(.system(size: 11, weight: .semibold))
-                                        .foregroundColor(.primary)
-                                        .frame(width: 28, height: 28)
-                                        .background(
-                                            LiquidGlassLens(cornerRadius: 7, isHighlighted: false)
-                                        )
-                                }
-                                .buttonStyle(.plain)
-                                .help("Copy Extracted Text (Live Text OCR)")
-                            }
-
                             // Copy Lens Button
                             Button(action: {
                                 viewModel.copyWithAnimation(item: item)
@@ -163,6 +124,7 @@ public struct SortaHUDView: View {
                                     .animation(.spring(response: 0.2, dampingFraction: 0.8), value: viewModel.justCopied)
                             }
                             .buttonStyle(.plain)
+                            .help("Copy (⌘C / Enter)")
 
                             // Paste Lens Button
                             Button(action: {
@@ -177,6 +139,7 @@ public struct SortaHUDView: View {
                                     .cornerRadius(7)
                             }
                             .buttonStyle(.plain)
+                            .help("Paste into active application (Return)")
                         }
                         .fixedSize(horizontal: true, vertical: false)
                         .opacity(viewModel.isHovering ? 1.0 : 0.0)
@@ -390,6 +353,129 @@ public struct SortaHUDView: View {
                 return viewModel.handleKeyDown(event: event)
             }
         )
+    }
+}
+
+/// Intelligent Contextual Super Button
+struct SuperActionButton: View {
+    let item: ClipItem
+    @ObservedObject var viewModel: HUDViewModel
+    @ObservedObject var watcher: PasteboardWatcher
+    @State private var justTriggered: Bool = false
+
+    private var superActionInfo: (icon: String, tooltip: String, action: () -> Void) {
+        if item.isImage {
+            if let barcode = item.decodedBarcode, !barcode.isEmpty {
+                return (
+                    "qrcode.viewfinder",
+                    "Copy Decoded \(item.barcodeType ?? "Barcode")",
+                    {
+                        viewModel.copyBarcodePayload(item: item)
+                    }
+                )
+            } else if let ocr = item.extractedText, !ocr.isEmpty {
+                return (
+                    "text.viewfinder",
+                    "Copy Extracted Live Text",
+                    {
+                        viewModel.copyExtractedText(item: item)
+                    }
+                )
+            } else {
+                return (
+                    "photo",
+                    "Copy Image",
+                    {
+                        viewModel.copyWithAnimation(item: item)
+                    }
+                )
+            }
+        }
+
+        switch item.category {
+        case .url:
+            return (
+                "sparkles",
+                "Clean Tracking URL & Copy",
+                {
+                    let cleaned = URLCleanerTransformer().transform(content: item.rawContent).first?.output ?? item.rawContent
+                    watcher.copyToClipboard(content: cleaned)
+                    viewModel.copyWithAnimation(item: item)
+                }
+            )
+        case .json:
+            return (
+                "curlybraces",
+                "Format JSON & Copy",
+                {
+                    let formatted = JSONFormatterTransformer().transform(content: item.rawContent).first?.output ?? item.rawContent
+                    watcher.copyToClipboard(content: formatted)
+                    viewModel.copyWithAnimation(item: item)
+                }
+            )
+        case .color:
+            return (
+                "paintpalette.fill",
+                "Copy Hex Color Code",
+                {
+                    let hex = ColorConverterTransformer().transform(content: item.rawContent).first?.output ?? item.rawContent
+                    watcher.copyToClipboard(content: hex)
+                    viewModel.copyWithAnimation(item: item)
+                }
+            )
+        case .jwt:
+            return (
+                "key.fill",
+                "Copy Decoded JWT Claims",
+                {
+                    let claims = JWTDecoderTransformer().transform(content: item.rawContent).first?.output ?? item.rawContent
+                    watcher.copyToClipboard(content: claims)
+                    viewModel.copyWithAnimation(item: item)
+                }
+            )
+        case .timestamp:
+            return (
+                "clock.fill",
+                "Copy ISO-8601 Timestamp",
+                {
+                    let ts = EpochTransformer().transform(content: item.rawContent).first?.output ?? item.rawContent
+                    watcher.copyToClipboard(content: ts)
+                    viewModel.copyWithAnimation(item: item)
+                }
+            )
+        default:
+            return (
+                item.category.systemImageName,
+                "Copy Content",
+                {
+                    viewModel.copyWithAnimation(item: item)
+                }
+            )
+        }
+    }
+
+    var body: some View {
+        let info = superActionInfo
+        Button(action: {
+            withAnimation(.spring(response: 0.18, dampingFraction: 0.75)) {
+                justTriggered = true
+            }
+            info.action()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                justTriggered = false
+            }
+        }) {
+            Image(systemName: justTriggered ? "checkmark" : info.icon)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(justTriggered ? .green : .primary)
+                .frame(width: 28, height: 28)
+                .background(
+                    LiquidGlassLens(cornerRadius: 7, isHighlighted: justTriggered)
+                )
+                .animation(.spring(response: 0.2, dampingFraction: 0.8), value: justTriggered)
+        }
+        .buttonStyle(.plain)
+        .help(info.tooltip)
     }
 }
 
@@ -733,7 +819,7 @@ struct NativeURLDetailView: View {
                     .lineSpacing(4)
                     .textSelection(.enabled)
                     .padding(.vertical, 2)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
 
                 if let comps = urlComponents {
                     HStack(spacing: 8) {
