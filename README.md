@@ -4,7 +4,7 @@
 
 # SORTA
 
-Smart, instant, zero-click macOS clipboard inspector and developer HUD. Built natively with Swift, SwiftUI, and AppKit. SORTA runs as an ultra-lightweight background process that monitors system pasteboard changes in real time, classifies payloads through deterministic pattern analysis, and renders an interactive floating HUD for immediate preview, transformation, and drag-and-drop file operations.
+Smart, instant, zero-click macOS clipboard inspector and developer HUD. Built natively with Swift, SwiftUI, and AppKit. SORTA runs as an ultra-lightweight background process that monitors system pasteboard changes in real time, classifies payloads through deterministic pattern analysis, and renders an interactive floating HUD for immediate preview, transformation, OCR text extraction, and drag-and-drop file operations.
 
 > [!WARNING]
 > Active Development: SORTA is under active development and rapid iteration. APIs, internal schemas, transformation pipelines, and keyboard mappings may evolve between builds.
@@ -19,9 +19,10 @@ SORTA is engineered as a zero-latency native macOS utility that bridges low-leve
 | :--- | :--- | :--- |
 | **Language** | Swift 5.9+ | Modern Swift concurrency, strict concurrency safety, structured state machines |
 | **UI Framework** | SwiftUI + AppKit | Hybrid architecture; AppKit for window lifecycle, SwiftUI for declarative view hierarchy |
-| **Window Subsystem** | `NSPanel` | Non-activating floating panel with `.hudWindow` visual effect backing and custom layer masks |
+| **Window Subsystem** | `NSPanel` | Non-activating floating panel with `.hudWindow` / `NSGlassEffectView` material backing |
 | **Pasteboard Pipeline** | `NSPasteboard` | High-frequency polling loop with change count debouncing and process filtering |
 | **Drag Engine** | `NSDraggingSource` | Direct Cocoa drag session manager registering file URLs, raw PNG streams, and TIFF buffers |
+| **Computer Vision Engine** | Apple Vision Framework | On-device `VNRecognizeTextRequest` and `VNDetectBarcodesRequest` via Neural Engine |
 | **Event Interception** | `NSEvent` Local Monitor | Non-blocking global key interceptors with modifier key tracking and tap counters |
 | **Storage Architecture** | In-Memory Ring Buffer | Ephemeral volatile memory store with zero disk footprint for clipboard history |
 
@@ -32,17 +33,36 @@ SORTA is engineered as a zero-latency native macOS utility that bridges low-leve
 ### Real-Time Pasteboard Monitoring and Classification
 The pasteboard watcher runs on a scheduled background thread that polls `NSPasteboard.general.changeCount`. When a new item is detected, the payload is immediately extracted and passed through a chain of deterministic classifiers without writing data to persistent storage. Content types are identified using regex heuristics, schema validation, and UTI inspection.
 
+### Intelligent Contextual Super Button
+The HUD header features an adaptive Super Button that dynamically changes its icon and triggers primary developer transformations in a single click:
+- **Images and Screenshots**: Triggers on-device Neural Engine OCR, extracts text/code, and toggles the interactive Live Text inspector.
+- **Barcodes and QR Codes**: Automatically copies decoded URLs, credentials, or serial numbers.
+- **URLs with Tracking Tokens**: Strips tracking parameters (`utm_*`, `fbclid`, `ref`) and copies the sanitized URL.
+- **Raw JSON Strings**: Formats and indents JSON with sorted keys.
+- **Color Values**: Extracts and copies uppercase hexadecimal declarations.
+- **JWT Tokens**: Decodes claims payloads into structured JSON.
+- **Timestamps**: Converts epoch numbers into human-readable ISO-8601 strings.
+
+### On-Device Vision OCR and Barcode Decoding
+Captured screenshots and images are processed asynchronously via Apple's Vision framework:
+- **Searchable Screenshots**: Recognized text inside images is automatically indexed, allowing users to search visual history directly via the HUD search bar.
+- **Auto-Written Payload Banner**: Decoded barcodes and recognized text are automatically printed in a selectable monospaced glass banner beneath the image canvas.
+- **Interactive Live Text Inspector**: Users can toggle between image presentation and full selectable text mode to copy specific lines or code snippets.
+
 ### Drag and Drop Architecture
 Images captured by the pasteboard engine can be clicked and dragged directly out of the HUD into any destination application. The drag source writes a temporary file to disk while simultaneously registering multiple pasteboard representations (`public.file-url`, `public.png`, `public.tiff`). This ensures native compatibility whether dropping into Finder folders, browser upload dropzones, or graphics software like Figma and Photoshop.
 
-### Native Visual Effect Backing
-The HUD uses AppKit visual effect views configured with behind-window blending modes and dark vibrancy appearances. The window avoids artificial overlays, letting underlying desktop wallpapers and active code editors blur through with optical clarity.
+### Native Liquid Glass Backing
+The HUD uses dynamic `NSGlassEffectView` runtime bridging with automatic `NSVisualEffectView` fallback configured with behind-window blending modes and dark vibrancy appearances. The window avoids artificial overlays, letting underlying desktop wallpapers and active code editors blur through with optical clarity.
 
 | Feature | Implementation | Behavior |
 | :--- | :--- | :--- |
 | **Direct Drag and Drop** | `NSDraggingSource` + `NSPasteboardItem` | Direct export into Finder, Figma, Slack, Discord, Chrome, VS Code, and Notes |
-| **Payload Classification** | Regex + JSONSerialization + Component Parsers | Automatic categorization into JSON, URLs, Colors, JWT, Timestamps, and Images |
-| **Collapsible History** | SwiftUI Navigation Drawer + LazyVStack | Slide-out history list with category pills, search filtering, and memory trimming |
+| **Contextual Super Button** | Dynamic Action Engine | Morphing 1-click execution for OCR, barcode copying, URL sanitization, and JSON formatting |
+| **Live Text and OCR** | `VNRecognizeTextRequest` | On-device Neural Engine text extraction with full search indexing across screenshots |
+| **Barcode Detection** | `VNDetectBarcodesRequest` + `CIDetector` | Automatic 1D/2D barcode and QR payload decoding with zero auto-execution |
+| **Payload Classification** | Regex + `JSONSerialization` + Component Parsers | Automatic categorization into JSON, URLs, Colors, JWT, Timestamps, and Images |
+| **Collapsible History** | SwiftUI Navigation Drawer + `LazyVStack` | Slide-out history list with category pills, search filtering, and memory trimming |
 | **Single-Action Workflow** | Direct Pasteboard Injection | One-click copy with animated state feedback and direct paste into the active window |
 | **Security Boundaries** | Bundle Identifier Filtering | Password managers and authentication daemons are bypassed completely |
 
@@ -68,9 +88,9 @@ Dot-separated three-part JWT strings are split, Base64URL decoded with padding c
 Numeric timestamp values (10-digit seconds and 13-digit milliseconds) and ISO-8601 strings are converted to localized human-readable dates, absolute time representations, and relative elapsed time descriptions.
 
 ### Live Text, OCR, and Barcode Detection
-When an image or screenshot is captured, SORTA runs an asynchronous Apple Vision (`VNRecognizeTextRequest` & `VNDetectBarcodesRequest`) pass using the local Neural Engine:
+When an image or screenshot is captured, SORTA runs an asynchronous Apple Vision (`VNRecognizeTextRequest` and `VNDetectBarcodesRequest`) pass using the local Neural Engine:
 - **Live Text OCR**: Extracted text is indexed for real-time fuzzy history search and can be copied directly via the Live Text inspector.
-- **Smart QR & Barcode Detection**: Automatically parses QR codes, Aztec, DataMatrix, and Barcodes. Users can copy the decoded link or Wi-Fi credential with a single click. For cybersecurity safety, links and executables are never opened automatically.
+- **Smart QR and Barcode Detection**: Automatically parses QR codes, Aztec, DataMatrix, and Barcodes. Users can copy the decoded link or Wi-Fi credential with a single click. For cybersecurity safety, links and executables are never opened automatically.
 
 | Category | Input Criteria | Output / Features |
 | :--- | :--- | :--- |
@@ -115,10 +135,14 @@ A dedicated `KeyEventHandlerView` utilizes `NSEvent.addLocalMonitorForEvents` to
 ### Drag and Drop Pipeline
 The image presenter wraps a custom AppKit `NSView` conforming to `NSDraggingSource`. Mouse drag thresholds are tracked explicitly, triggering `beginDraggingSession` with an `NSDraggingItem` that provides multi-type pasteboard representations on demand.
 
+### On-Device Vision Engine
+`ImageOCRService` and `BarcodeDetectorService` execute against hardware-accelerated Apple Neural Engine cores using `VNImageRequestHandler`. Analysis operations run in background dispatches without blocking the main rendering loop or degrading interactive frame rates.
+
 | Module | Core Classes | Primary Responsibility |
 | :--- | :--- | :--- |
 | **Core Panel** | `HUDPanel`, `PanelManager` | Window level configuration, floating mask lifecycle, focus management |
 | **Watcher Engine** | `PasteboardWatcher` | Change count polling, secret masking, application blocklisting |
+| **Vision Services** | `ImageOCRService`, `BarcodeDetectorService` | On-device text recognition, barcode symbology decoding, Neural Engine execution |
 | **View Model** | `HUDViewModel` | Selection state, search query filtering, animated copy feedback |
 | **Views** | `SortaHUDView`, `HistoryListView` | Declarative UI, visual effect backing, responsive layout |
 | **Drag Controller** | `DraggableImageNSView`, `DragItemProviderHelper` | Native AppKit drag session management and UTI registration |
@@ -131,13 +155,15 @@ SORTA is built with a local-first, privacy-centric design:
 
 - **Password Manager Exclusion**: Copies originating from 1Password, Bitwarden, KeePassXC, Keychain Access, and other credential vaults are discarded at the listener layer.
 - **Sensitive Token Masking**: Built-in pattern recognition identifies AWS secret keys (`AKIA...`), GitHub personal access tokens (`ghp_...`), OpenAI API keys (`sk-...`), and private keys, masking them in the user interface.
-- **Memory-Only Processing**: Clipboard history is maintained strictly in volatile memory. No text or image data is persisted to disk databases or transmitted over external networks.
+- **Zero Network Transmission**: All classification, Live Text OCR, and barcode decoding execute on-device using local Neural Engine pipelines. No clipboard data is transmitted across networks.
+- **Ephemeral Processing**: Clipboard history is maintained in memory during runtime and persisted strictly to local user preferences. No telemetry or analytics are collected.
 
 | Protection Layer | Target Scope | Security Mechanism |
 | :--- | :--- | :--- |
 | **Vault Shield** | Password Managers | Bundle identifier filtering drops sensitive copies before ingestion |
 | **Token Guard** | API Keys & Secrets | Regex heuristics detect and mask credential signatures |
 | **Network Isolation** | Entire Application | Zero outbound HTTP requests, zero telemetry, zero analytics |
+| **Execution Guard** | QR & Barcodes | Decoded URLs and scripts are never auto-opened or executed |
 
 ---
 
