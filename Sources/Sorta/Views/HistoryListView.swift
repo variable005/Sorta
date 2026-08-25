@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 public struct HistoryListView: View {
     @ObservedObject var viewModel: HUDViewModel
@@ -214,6 +215,9 @@ struct ImageGridCell: View {
         .simultaneousGesture(TapGesture(count: 2).onEnded {
             onDoubleClick()
         })
+        .onDrag {
+            DragItemProviderHelper.createImageItemProvider(item: item)
+        }
     }
 }
 
@@ -283,6 +287,13 @@ struct CompactHistoryRow: View {
         .simultaneousGesture(TapGesture(count: 2).onEnded {
             onDoubleClick()
         })
+        .onDrag {
+            if item.isImage {
+                return DragItemProviderHelper.createImageItemProvider(item: item)
+            } else {
+                return NSItemProvider(object: item.rawContent as NSString)
+            }
+        }
     }
 
     private func formattedTime(_ date: Date) -> String {

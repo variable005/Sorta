@@ -182,7 +182,7 @@ public struct SortaHUDView: View {
                                     .padding(16)
                                 }
                             } else {
-                                // Single image preview
+                                // Single image preview (Draggable)
                                 VStack(spacing: 14) {
                                     if let data = item.imageData, let nsImage = NSImage(data: data) {
                                         Image(nsImage: nsImage)
@@ -194,6 +194,9 @@ public struct SortaHUDView: View {
                                                 RoundedRectangle(cornerRadius: 8)
                                                     .stroke(Color.white.opacity(0.15), lineWidth: 1)
                                             )
+                                            .onDrag {
+                                                DragItemProviderHelper.createImageItemProvider(item: item)
+                                            }
                                     }
 
                                     if let dims = item.imageDimensions {
@@ -278,7 +281,7 @@ struct NativeTextContentView: View {
     }
 }
 
-/// Standard Text View
+/// Standard Text View (Draggable)
 struct NativeStandardTextView: View {
     let rawContent: String
     let category: ClipCategory
@@ -299,10 +302,13 @@ struct NativeStandardTextView: View {
                 .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onDrag {
+            NSItemProvider(object: rawContent as NSString)
+        }
     }
 }
 
-/// JSON View (2-Space Auto-Pretty-Printed)
+/// JSON View (2-Space Auto-Pretty-Printed, Draggable)
 struct NativeJSONDetailView: View {
     let rawContent: String
 
@@ -329,6 +335,9 @@ struct NativeJSONDetailView: View {
                 .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onDrag {
+            NSItemProvider(object: prettyJSON as NSString)
+        }
     }
 }
 
@@ -370,6 +379,9 @@ struct NativeJWTDetailView: View {
                         .frame(maxWidth: .infinity, alignment: .topLeading)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .onDrag {
+                    NSItemProvider(object: payload as NSString)
+                }
             }
         } else {
             NativeStandardTextView(rawContent: rawContent, category: .jwt)
@@ -627,10 +639,13 @@ struct NativeURLDetailView: View {
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onDrag {
+            NSItemProvider(object: rawContent as NSString)
+        }
     }
 }
 
-/// Image Grid Card
+/// Image Grid Card (Draggable)
 struct ImageGridCard: View {
     let item: ClipItem
     let isSelected: Bool
@@ -697,6 +712,43 @@ struct ImageGridCard: View {
         .simultaneousGesture(TapGesture(count: 2).onEnded {
             onDoubleClick()
         })
+        .onDrag {
+            DragItemProviderHelper.createImageItemProvider(item: item)
+        }
+    }
+}
+
+/// Helper for native macOS drag-and-drop item provider export
+public enum DragItemProviderHelper {
+    public static func createImageItemProvider(item: ClipItem) -> NSItemProvider {
+        guard let data = item.imageData, let nsImage = NSImage(data: data) else {
+            return NSItemProvider()
+        }
+
+        let tempDir = FileManager.default.temporaryDirectory
+        let fileName = "Sorta_\(item.id.uuidString.prefix(8)).png"
+        let fileURL = tempDir.appendingPathComponent(fileName)
+
+        try? data.write(to: fileURL)
+
+        let provider = NSItemProvider()
+
+        // 1. Register as a file URL for Desktop/Finder/Folders/Mail
+        provider.registerFileRepresentation(forTypeIdentifier: "public.png", fileOptions: .openInPlace, visibility: .all) { completion in
+            completion(fileURL, true, nil)
+            return nil
+        }
+
+        // 2. Register data representation for web browsers/Discord/Slack/Figma
+        provider.registerDataRepresentation(forTypeIdentifier: "public.png", visibility: .all) { completion in
+            completion(data, nil)
+            return nil
+        }
+
+        // 3. Register NSImage object for native AppKit drop targets
+        provider.registerObject(nsImage, visibility: .all)
+
+        return provider
     }
 }
 
