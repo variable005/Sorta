@@ -16,7 +16,7 @@ public struct SortaHUDView: View {
 
     public var body: some View {
         HStack(spacing: 0) {
-            // OPTIONAL SIDEBAR: Hidden by default, toggled with Tab / Cmd+H or History Button
+            // OPTIONAL SIDEBAR: Liquid Glass Sidebar
             if viewModel.isSidebarVisible {
                 VStack(spacing: 0) {
                     // Search Bar
@@ -89,12 +89,12 @@ public struct SortaHUDView: View {
                     .background(Color.white.opacity(0.10))
             }
 
-            // MAIN AREA: Ultra-Minimal Content Viewer
+            // MAIN AREA: Liquid Glass Content Viewer
             VStack(spacing: 0) {
                 if let item = viewModel.currentSelectedItem {
-                    // Minimal Top Header Bar (Symbol-only controls)
-                    HStack(spacing: 6) {
-                        // Toggle Sidebar Button (Symbol only)
+                    // Liquid Glass Top Header Bar
+                    HStack(spacing: 8) {
+                        // Toggle Sidebar Button (Liquid Glass Lens)
                         Button(action: {
                             withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
                                 viewModel.isSidebarVisible.toggle()
@@ -102,40 +102,79 @@ public struct SortaHUDView: View {
                         }) {
                             Image(systemName: viewModel.isSidebarVisible ? "sidebar.left" : "clock.arrow.circlepath")
                                 .font(.system(size: 11))
-                                .foregroundColor(viewModel.isSidebarVisible ? .primary : .secondary)
-                                .frame(width: 24, height: 24)
-                                .background(Color.white.opacity(viewModel.isSidebarVisible ? 0.12 : (viewModel.isHovering ? 0.08 : 0.0)))
-                                .cornerRadius(5)
+                                .foregroundColor(viewModel.isSidebarVisible ? .white : .secondary)
+                                .frame(width: 26, height: 26)
+                                .background(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.white.opacity(viewModel.isSidebarVisible ? 0.20 : 0.10),
+                                            Color.white.opacity(viewModel.isSidebarVisible ? 0.10 : 0.03)
+                                        ],
+                                        startPoint: .top,
+                                        endPoint: .bottom
+                                    )
+                                )
+                                .cornerRadius(6)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 6)
+                                        .stroke(Color.white.opacity(0.18), lineWidth: 0.8)
+                                )
                         }
                         .buttonStyle(.plain)
 
-                        // Category Type Indicator (Symbol only)
+                        // Category Type Indicator (Liquid Glass Pill)
                         Image(systemName: item.category.systemImageName)
                             .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(.secondary)
-                            .frame(width: 24, height: 24)
-                            .background(Color.white.opacity(0.06))
-                            .cornerRadius(5)
+                            .foregroundColor(.white.opacity(0.85))
+                            .frame(width: 26, height: 26)
+                            .background(
+                                LinearGradient(
+                                    colors: [
+                                        Color.white.opacity(0.12),
+                                        Color.white.opacity(0.04)
+                                    ],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                            .cornerRadius(6)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(Color.white.opacity(0.16), lineWidth: 0.8)
+                            )
 
                         Spacer(minLength: 12)
 
-                        // Action Buttons (Symbols only, reveals on hover)
+                        // Action Buttons (Liquid Glass Lenses, reveals on hover)
                         HStack(spacing: 6) {
-                            // Copy Symbol Button
+                            // Copy Lens Button
                             Button(action: {
                                 viewModel.copyWithAnimation(item: item)
                             }) {
                                 Image(systemName: viewModel.justCopied ? "checkmark" : "doc.on.doc")
                                     .font(.system(size: 11, weight: viewModel.justCopied ? .bold : .regular))
-                                    .foregroundColor(viewModel.justCopied ? .green : .primary)
-                                    .frame(width: 24, height: 24)
-                                    .background(Color.white.opacity(viewModel.justCopied ? 0.16 : 0.08))
-                                    .cornerRadius(5)
+                                    .foregroundColor(viewModel.justCopied ? .green : .white)
+                                    .frame(width: 26, height: 26)
+                                    .background(
+                                        LinearGradient(
+                                            colors: [
+                                                Color.white.opacity(viewModel.justCopied ? 0.25 : 0.14),
+                                                Color.white.opacity(viewModel.justCopied ? 0.12 : 0.05)
+                                            ],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        )
+                                    )
+                                    .cornerRadius(6)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 6)
+                                            .stroke(Color.white.opacity(viewModel.justCopied ? 0.35 : 0.20), lineWidth: 0.8)
+                                    )
                                     .animation(.spring(response: 0.2, dampingFraction: 0.8), value: viewModel.justCopied)
                             }
                             .buttonStyle(.plain)
 
-                            // Paste Symbol Button
+                            // Paste Lens Button
                             Button(action: {
                                 watcher.pasteRawItem(item)
                                 PanelManager.shared.hidePanel()
@@ -143,9 +182,19 @@ public struct SortaHUDView: View {
                                 Image(systemName: "return")
                                     .font(.system(size: 11, weight: .bold))
                                     .foregroundColor(.black)
-                                    .frame(width: 24, height: 24)
-                                    .background(Color.white)
-                                    .cornerRadius(5)
+                                    .frame(width: 26, height: 26)
+                                    .background(
+                                        LinearGradient(
+                                            colors: [
+                                                Color.white,
+                                                Color.white.opacity(0.92)
+                                            ],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        )
+                                    )
+                                    .cornerRadius(6)
+                                    .shadow(color: Color.white.opacity(0.20), radius: 4, x: 0, y: 1)
                             }
                             .buttonStyle(.plain)
                         }
@@ -153,14 +202,23 @@ public struct SortaHUDView: View {
                         .opacity(viewModel.isHovering ? 1.0 : 0.0)
                         .animation(.spring(response: 0.2, dampingFraction: 0.85), value: viewModel.isHovering)
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(Color.white.opacity(0.02))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.04),
+                                Color.clear
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
 
                     Divider()
                         .background(Color.white.opacity(0.08))
 
-                    // MAIN CONTENT VIEWPORT (Edge-to-Edge Clean Card with Crossfade)
+                    // MAIN CONTENT VIEWPORT (Liquid Glass Inset Lens Card)
                     VStack {
                         if item.isImage {
                             if imageHistory.count > 1 {
@@ -189,28 +247,45 @@ public struct SortaHUDView: View {
                                 }
                             } else {
                                 // Single image preview
-                                VStack(spacing: 12) {
+                                VStack(spacing: 14) {
                                     if let data = item.imageData, let nsImage = NSImage(data: data) {
                                         Image(nsImage: nsImage)
                                             .resizable()
                                             .aspectRatio(contentMode: .fit)
                                             .frame(maxWidth: 360, maxHeight: 230)
-                                            .cornerRadius(8)
-                                            .shadow(color: Color.black.opacity(0.45), radius: 12, x: 0, y: 6)
+                                            .cornerRadius(10)
+                                            .shadow(color: Color.black.opacity(0.55), radius: 16, x: 0, y: 8)
                                             .overlay(
-                                                RoundedRectangle(cornerRadius: 8)
-                                                    .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                                                RoundedRectangle(cornerRadius: 10)
+                                                    .stroke(
+                                                        LinearGradient(
+                                                            colors: [Color.white.opacity(0.30), Color.white.opacity(0.06)],
+                                                            startPoint: .topLeading,
+                                                            endPoint: .bottomTrailing
+                                                        ),
+                                                        lineWidth: 1
+                                                    )
                                             )
                                     }
 
                                     if let dims = item.imageDimensions {
                                         Text(dims)
                                             .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
-                                            .foregroundColor(.white.opacity(0.8))
+                                            .foregroundColor(.white.opacity(0.9))
                                             .padding(.horizontal, 10)
                                             .padding(.vertical, 4)
-                                            .background(Color.white.opacity(0.06))
+                                            .background(
+                                                LinearGradient(
+                                                    colors: [Color.white.opacity(0.12), Color.white.opacity(0.04)],
+                                                    startPoint: .top,
+                                                    endPoint: .bottom
+                                                )
+                                            )
                                             .cornerRadius(6)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 6)
+                                                    .stroke(Color.white.opacity(0.15), lineWidth: 0.8)
+                                            )
                                             .fixedSize()
                                     }
                                 }
@@ -218,12 +293,12 @@ public struct SortaHUDView: View {
                                 .padding(20)
                             }
                         } else {
-                            // High-end Text Viewer in Clean Card
+                            // Liquid Glass Inset Text Card
                             SmartTextCardView(item: item, watcher: watcher)
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.black.opacity(0.16))
+                    .background(Color.black.opacity(0.20))
                     .id(item.id)
                     .transition(.opacity)
                     .animation(.easeInOut(duration: 0.12), value: item.id)
@@ -244,13 +319,34 @@ public struct SortaHUDView: View {
         .frame(width: viewModel.isSidebarVisible ? 720 : 580, height: 420)
         .background(
             ZStack {
-                Color(red: 0.11, green: 0.11, blue: 0.13).opacity(0.98)
-                VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
+                VisualEffectBlur(material: .popover, blendingMode: .behindWindow)
+                // Liquid ambient luminance gradient
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(0.07),
+                        Color.black.opacity(0.12),
+                        Color.black.opacity(0.45)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
             }
         )
         .overlay(
+            // Specular Prismatic Bevel Rim
             RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                .stroke(
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.35),
+                            Color.white.opacity(0.12),
+                            Color.white.opacity(0.03)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
         )
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .onHover { hovering in
@@ -266,7 +362,7 @@ public struct SortaHUDView: View {
     }
 }
 
-/// Smart Text Card View with Inset Card Container & Clean Typography
+/// Smart Text Card View with Liquid Glass Container
 struct SmartTextCardView: View {
     let item: ClipItem
     let watcher: PasteboardWatcher
@@ -292,7 +388,7 @@ struct SmartTextCardView: View {
     }
 }
 
-/// Standard Text Inset Card with natural wrapping and comfortable line height
+/// Standard Text Inset Card with Liquid Glass finish
 struct StandardTextCard: View {
     let rawContent: String
     let category: ClipCategory
@@ -313,16 +409,32 @@ struct StandardTextCard: View {
                 .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.white.opacity(0.03))
+        .background(
+            ZStack {
+                Color.black.opacity(0.25)
+                LinearGradient(
+                    colors: [Color.white.opacity(0.04), Color.clear],
+                    startPoint: .top,
+                    endPoint: .center
+                )
+            }
+        )
         .cornerRadius(10)
         .overlay(
             RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                .stroke(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.16), Color.white.opacity(0.04)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
         )
     }
 }
 
-/// JSON Card (Pretty prints valid JSON automatically)
+/// JSON Card (Liquid Glass with 2-space pretty printing)
 struct JSONDetailCard: View {
     let rawContent: String
 
@@ -349,11 +461,27 @@ struct JSONDetailCard: View {
                 .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.white.opacity(0.03))
+        .background(
+            ZStack {
+                Color.black.opacity(0.25)
+                LinearGradient(
+                    colors: [Color.white.opacity(0.04), Color.clear],
+                    startPoint: .top,
+                    endPoint: .center
+                )
+            }
+        )
         .cornerRadius(10)
         .overlay(
             RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                .stroke(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.16), Color.white.opacity(0.04)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
         )
     }
 }
@@ -381,7 +509,7 @@ struct JWTDetailCard: View {
     var body: some View {
         if let payload = decodedPayload {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Decoded JWT Claims")
+                Text("Decoded Claims")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundColor(.secondary)
                     .padding(.horizontal, 4)
@@ -396,11 +524,27 @@ struct JWTDetailCard: View {
                         .frame(maxWidth: .infinity, alignment: .topLeading)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.white.opacity(0.03))
+                .background(
+                    ZStack {
+                        Color.black.opacity(0.25)
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.04), Color.clear],
+                            startPoint: .top,
+                            endPoint: .center
+                        )
+                    }
+                )
                 .cornerRadius(10)
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
-                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                        .stroke(
+                            LinearGradient(
+                                colors: [Color.white.opacity(0.16), Color.white.opacity(0.04)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
                 )
             }
         } else {
@@ -438,9 +582,16 @@ struct ColorDetailCard: View {
                     .frame(width: 84, height: 84)
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.white.opacity(0.25), lineWidth: 1)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0.40), Color.white.opacity(0.10)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1.2
+                            )
                     )
-                    .shadow(color: Color.black.opacity(0.4), radius: 10, x: 0, y: 5)
+                    .shadow(color: Color.black.opacity(0.45), radius: 12, x: 0, y: 6)
 
                 VStack(spacing: 8) {
                     ColorCardRow(label: "HEX", value: col.hex) { watcher.copyToClipboard(content: col.hex) }
@@ -453,11 +604,27 @@ struct ColorDetailCard: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(16)
-            .background(Color.white.opacity(0.03))
+            .background(
+                ZStack {
+                    Color.black.opacity(0.25)
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.04), Color.clear],
+                        startPoint: .top,
+                        endPoint: .center
+                    )
+                }
+            )
             .cornerRadius(10)
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.16), Color.white.opacity(0.04)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
             )
         } else {
             StandardTextCard(rawContent: rawContent, category: .color)
@@ -552,11 +719,27 @@ struct TimestampDetailCard: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(16)
-            .background(Color.white.opacity(0.03))
+            .background(
+                ZStack {
+                    Color.black.opacity(0.25)
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.04), Color.clear],
+                        startPoint: .top,
+                        endPoint: .center
+                    )
+                }
+            )
             .cornerRadius(10)
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.16), Color.white.opacity(0.04)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
             )
         } else {
             StandardTextCard(rawContent: rawContent, category: .timestamp)
@@ -662,16 +845,32 @@ struct URLDetailCard: View {
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.white.opacity(0.03))
+        .background(
+            ZStack {
+                Color.black.opacity(0.25)
+                LinearGradient(
+                    colors: [Color.white.opacity(0.04), Color.clear],
+                    startPoint: .top,
+                    endPoint: .center
+                )
+            }
+        )
         .cornerRadius(10)
         .overlay(
             RoundedRectangle(cornerRadius: 10)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                .stroke(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.16), Color.white.opacity(0.04)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
         )
     }
 }
 
-/// Modern Image Grid Card with strictly bounded aspect-fill rendering
+/// Modern Image Grid Card with Liquid Glass framing
 struct ImageGridCard: View {
     let item: ClipItem
     let isSelected: Bool
@@ -725,7 +924,10 @@ struct ImageGridCard: View {
             .cornerRadius(8)
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .stroke(isSelected ? Color.white : Color.white.opacity(0.12), lineWidth: isSelected ? 2 : 1)
+                    .stroke(
+                        isSelected ? Color.white : Color.white.opacity(0.15),
+                        lineWidth: isSelected ? 2 : 1
+                    )
             )
             .scaleEffect(isSelected ? 1.02 : 1.0)
             .animation(.spring(response: 0.18, dampingFraction: 0.85), value: isSelected)
