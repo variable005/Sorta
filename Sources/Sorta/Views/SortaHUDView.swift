@@ -361,7 +361,6 @@ struct SuperActionButton: View {
     let item: ClipItem
     @ObservedObject var viewModel: HUDViewModel
     @ObservedObject var watcher: PasteboardWatcher
-    @State private var justTriggered: Bool = false
 
     private var superActionInfo: (icon: String, tooltip: String, action: () -> Void) {
         if item.isImage {
@@ -398,7 +397,7 @@ struct SuperActionButton: View {
                 "sparkles",
                 "Clean Tracking URL & Copy",
                 {
-                    let cleaned = URLCleanerTransformer().transform(content: item.rawContent).first?.output ?? item.rawContent
+                    let cleaned = URLCleanerTransformer().transform(content: item.rawContent).first?.transformedContent ?? item.rawContent
                     watcher.copyToClipboard(content: cleaned)
                     viewModel.copyWithAnimation(item: item)
                 }
@@ -408,7 +407,7 @@ struct SuperActionButton: View {
                 "curlybraces",
                 "Format JSON & Copy",
                 {
-                    let formatted = JSONFormatterTransformer().transform(content: item.rawContent).first?.output ?? item.rawContent
+                    let formatted = JSONTransformer().transform(content: item.rawContent).first?.transformedContent ?? item.rawContent
                     watcher.copyToClipboard(content: formatted)
                     viewModel.copyWithAnimation(item: item)
                 }
@@ -418,7 +417,7 @@ struct SuperActionButton: View {
                 "paintpalette.fill",
                 "Copy Hex Color Code",
                 {
-                    let hex = ColorConverterTransformer().transform(content: item.rawContent).first?.output ?? item.rawContent
+                    let hex = ColorTransformer().transform(content: item.rawContent).first?.transformedContent ?? item.rawContent
                     watcher.copyToClipboard(content: hex)
                     viewModel.copyWithAnimation(item: item)
                 }
@@ -428,7 +427,7 @@ struct SuperActionButton: View {
                 "key.fill",
                 "Copy Decoded JWT Claims",
                 {
-                    let claims = JWTDecoderTransformer().transform(content: item.rawContent).first?.output ?? item.rawContent
+                    let claims = JWTTransformer().transform(content: item.rawContent).first?.transformedContent ?? item.rawContent
                     watcher.copyToClipboard(content: claims)
                     viewModel.copyWithAnimation(item: item)
                 }
@@ -438,7 +437,7 @@ struct SuperActionButton: View {
                 "clock.fill",
                 "Copy ISO-8601 Timestamp",
                 {
-                    let ts = EpochTransformer().transform(content: item.rawContent).first?.output ?? item.rawContent
+                    let ts = TimestampTransformer().transform(content: item.rawContent).first?.transformedContent ?? item.rawContent
                     watcher.copyToClipboard(content: ts)
                     viewModel.copyWithAnimation(item: item)
                 }
@@ -457,22 +456,16 @@ struct SuperActionButton: View {
     var body: some View {
         let info = superActionInfo
         Button(action: {
-            withAnimation(.spring(response: 0.18, dampingFraction: 0.75)) {
-                justTriggered = true
-            }
             info.action()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                justTriggered = false
-            }
         }) {
-            Image(systemName: justTriggered ? "checkmark" : info.icon)
+            Image(systemName: viewModel.justCopied ? "checkmark" : info.icon)
                 .font(.system(size: 11, weight: .semibold))
-                .foregroundColor(justTriggered ? .green : .primary)
+                .foregroundColor(viewModel.justCopied ? .green : .primary)
                 .frame(width: 28, height: 28)
                 .background(
-                    LiquidGlassLens(cornerRadius: 7, isHighlighted: justTriggered)
+                    LiquidGlassLens(cornerRadius: 7, isHighlighted: viewModel.justCopied)
                 )
-                .animation(.spring(response: 0.2, dampingFraction: 0.8), value: justTriggered)
+                .animation(.spring(response: 0.2, dampingFraction: 0.8), value: viewModel.justCopied)
         }
         .buttonStyle(.plain)
         .help(info.tooltip)
