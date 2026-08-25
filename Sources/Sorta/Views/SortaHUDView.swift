@@ -374,17 +374,46 @@ struct SuperActionButton: View {
             } else if let ocr = item.extractedText, !ocr.isEmpty {
                 return (
                     "text.viewfinder",
-                    "Copy Extracted Live Text",
+                    "Extract Live Text (OCR)",
                     {
                         viewModel.copyExtractedText(item: item)
+                        withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
+                            viewModel.showLiveTextView.toggle()
+                        }
                     }
                 )
             } else {
                 return (
-                    "photo",
-                    "Copy Image",
+                    "text.viewfinder",
+                    "Run Live Text OCR & Extract",
                     {
-                        viewModel.copyWithAnimation(item: item)
+                        if let data = item.imageData {
+                            ImageOCRService.extractText(from: data) { recognized in
+                                guard let text = recognized, !text.isEmpty else {
+                                    viewModel.copyWithAnimation(item: item)
+                                    return
+                                }
+                                DispatchQueue.main.async {
+                                    if let idx = watcher.history.firstIndex(where: { $0.id == item.id }) {
+                                        watcher.history[idx].extractedText = text
+                                        if watcher.currentItem?.id == item.id {
+                                            watcher.currentItem?.extractedText = text
+                                        }
+                                        watcher.saveState()
+                                    }
+                                    watcher.copyToClipboard(content: text)
+                                    withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
+                                        viewModel.showLiveTextView = true
+                                        viewModel.justCopied = true
+                                    }
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                                        viewModel.justCopied = false
+                                    }
+                                }
+                            }
+                        } else {
+                            viewModel.copyWithAnimation(item: item)
+                        }
                     }
                 )
             }
