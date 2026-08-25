@@ -38,7 +38,8 @@ public final class HUDViewModel: ObservableObject {
             let matchesCategory = selectedCategory == nil || item.category == selectedCategory
             let matchesSearch = searchQuery.isEmpty ||
                 item.rawContent.localizedCaseInsensitiveContains(searchQuery) ||
-                (item.extractedText?.localizedCaseInsensitiveContains(searchQuery) == true)
+                (item.extractedText?.localizedCaseInsensitiveContains(searchQuery) == true) ||
+                (item.decodedBarcode?.localizedCaseInsensitiveContains(searchQuery) == true)
             return matchesPinned && matchesCategory && matchesSearch
         }
     }
@@ -71,6 +72,18 @@ public final class HUDViewModel: ObservableObject {
     public func copyExtractedText(item: ClipItem) {
         guard let text = item.extractedText, !text.isEmpty else { return }
         watcher?.copyToClipboard(content: text)
+        withAnimation(.spring(response: 0.22, dampingFraction: 0.75)) {
+            justCopied = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) { [weak self] in
+            PanelManager.shared.hidePanel()
+            self?.justCopied = false
+        }
+    }
+
+    public func copyBarcodePayload(item: ClipItem) {
+        guard let barcode = item.decodedBarcode, !barcode.isEmpty else { return }
+        watcher?.copyToClipboard(content: barcode)
         withAnimation(.spring(response: 0.22, dampingFraction: 0.75)) {
             justCopied = true
         }

@@ -89,6 +89,22 @@ public final class PasteboardWatcher: ObservableObject {
                         }
                     }
                 }
+
+                // Asynchronously detect QR codes and barcodes on-device
+                BarcodeDetectorService.detectBarcodes(from: pngData) { [weak self] detectedPayload in
+                    guard let self = self, let payload = detectedPayload else { return }
+                    DispatchQueue.main.async {
+                        if let idx = self.history.firstIndex(where: { $0.id == targetId }) {
+                            self.history[idx].decodedBarcode = payload.payloadString
+                            self.history[idx].barcodeType = payload.symbology
+                            if self.currentItem?.id == targetId {
+                                self.currentItem?.decodedBarcode = payload.payloadString
+                                self.currentItem?.barcodeType = payload.symbology
+                            }
+                            self.saveState()
+                        }
+                    }
+                }
                 return
             }
         }

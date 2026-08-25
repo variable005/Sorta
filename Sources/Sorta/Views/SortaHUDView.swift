@@ -21,7 +21,7 @@ public struct SortaHUDView: View {
                             .foregroundColor(.secondary)
                             .font(.system(size: 12))
 
-                        TextField("Search text or OCR in images...", text: $viewModel.searchQuery)
+                        TextField("Search text, QR, or OCR in images...", text: $viewModel.searchQuery)
                             .textFieldStyle(.plain)
                             .font(.system(size: 12))
 
@@ -115,6 +115,23 @@ public struct SortaHUDView: View {
 
                         // Action Lenses (Fluid Morph on Hover)
                         HStack(spacing: 6) {
+                            // QR / Barcode Payload Copy Lens (if detected)
+                            if item.isImage, let barcode = item.decodedBarcode, !barcode.isEmpty {
+                                Button(action: {
+                                    viewModel.copyBarcodePayload(item: item)
+                                }) {
+                                    Image(systemName: "qrcode.viewfinder")
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundColor(.primary)
+                                        .frame(width: 28, height: 28)
+                                        .background(
+                                            LiquidGlassLens(cornerRadius: 7, isHighlighted: false)
+                                        )
+                                }
+                                .buttonStyle(.plain)
+                                .help("Copy Decoded \(item.barcodeType ?? "QR Code")")
+                            }
+
                             // Extract OCR Text Lens (if image has text)
                             if item.isImage, let extracted = item.extractedText, !extracted.isEmpty {
                                 Button(action: {
@@ -230,38 +247,69 @@ public struct SortaHUDView: View {
                                             )
                                             .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 5)
 
-                                        // Live Text Toggle Badge (if OCR text detected)
-                                        if let ocrText = item.extractedText, !ocrText.isEmpty {
-                                            Button(action: {
-                                                withAnimation(.spring(response: 0.2, dampingFraction: 0.85)) {
-                                                    viewModel.showLiveTextView = true
-                                                }
-                                            }) {
-                                                HStack(spacing: 4) {
-                                                    Image(systemName: "text.viewfinder")
-                                                        .font(.system(size: 9, weight: .bold))
-                                                    Text("Live Text")
-                                                        .font(.system(size: 10, weight: .medium))
-                                                }
-                                                .foregroundColor(.white)
-                                                .padding(.horizontal, 8)
-                                                .padding(.vertical, 4)
-                                                .background(
-                                                    LinearGradient(
-                                                        colors: [Color.black.opacity(0.75), Color.black.opacity(0.55)],
-                                                        startPoint: .top,
-                                                        endPoint: .bottom
+                                        // Floating QR Code / Live Text Pill Bar
+                                        HStack(spacing: 6) {
+                                            if let barcode = item.decodedBarcode, !barcode.isEmpty {
+                                                Button(action: {
+                                                    viewModel.copyBarcodePayload(item: item)
+                                                }) {
+                                                    HStack(spacing: 4) {
+                                                        Image(systemName: "qrcode")
+                                                            .font(.system(size: 9, weight: .bold))
+                                                        Text(barcode.hasPrefix("http") ? "Copy Link" : "Copy QR")
+                                                            .font(.system(size: 10, weight: .medium))
+                                                    }
+                                                    .foregroundColor(.white)
+                                                    .padding(.horizontal, 8)
+                                                    .padding(.vertical, 4)
+                                                    .background(
+                                                        LinearGradient(
+                                                            colors: [Color.black.opacity(0.80), Color.black.opacity(0.60)],
+                                                            startPoint: .top,
+                                                            endPoint: .bottom
+                                                        )
                                                     )
-                                                )
-                                                .cornerRadius(5)
-                                                .overlay(
-                                                    RoundedRectangle(cornerRadius: 5)
-                                                        .stroke(Color.white.opacity(0.25), lineWidth: 0.8)
-                                                )
+                                                    .cornerRadius(5)
+                                                    .overlay(
+                                                        RoundedRectangle(cornerRadius: 5)
+                                                            .stroke(Color.white.opacity(0.25), lineWidth: 0.8)
+                                                    )
+                                                }
+                                                .buttonStyle(.plain)
                                             }
-                                            .buttonStyle(.plain)
-                                            .padding(10)
+
+                                            if let ocrText = item.extractedText, !ocrText.isEmpty {
+                                                Button(action: {
+                                                    withAnimation(.spring(response: 0.2, dampingFraction: 0.85)) {
+                                                        viewModel.showLiveTextView = true
+                                                    }
+                                                }) {
+                                                    HStack(spacing: 4) {
+                                                        Image(systemName: "text.viewfinder")
+                                                            .font(.system(size: 9, weight: .bold))
+                                                        Text("Live Text")
+                                                            .font(.system(size: 10, weight: .medium))
+                                                    }
+                                                    .foregroundColor(.white)
+                                                    .padding(.horizontal, 8)
+                                                    .padding(.vertical, 4)
+                                                    .background(
+                                                        LinearGradient(
+                                                            colors: [Color.black.opacity(0.80), Color.black.opacity(0.60)],
+                                                            startPoint: .top,
+                                                            endPoint: .bottom
+                                                        )
+                                                    )
+                                                    .cornerRadius(5)
+                                                    .overlay(
+                                                        RoundedRectangle(cornerRadius: 5)
+                                                            .stroke(Color.white.opacity(0.25), lineWidth: 0.8)
+                                                    )
+                                                }
+                                                .buttonStyle(.plain)
+                                            }
                                         }
+                                        .padding(10)
                                     }
                                     .padding(16)
                                 }

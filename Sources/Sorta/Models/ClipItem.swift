@@ -10,6 +10,8 @@ public struct ClipItem: Identifiable, Equatable, Codable, Hashable {
     public var imageData: Data?
     public var imageDimensions: String?
     public var extractedText: String?
+    public var decodedBarcode: String?
+    public var barcodeType: String?
 
     public var category: ClipCategory {
         ClipCategory(rawValue: categoryRaw) ?? .text
@@ -28,7 +30,9 @@ public struct ClipItem: Identifiable, Equatable, Codable, Hashable {
         isPinned: Bool = false,
         imageData: Data? = nil,
         imageDimensions: String? = nil,
-        extractedText: String? = nil
+        extractedText: String? = nil,
+        decodedBarcode: String? = nil,
+        barcodeType: String? = nil
     ) {
         self.id = id
         self.rawContent = rawContent
@@ -39,5 +43,7 @@ public struct ClipItem: Identifiable, Equatable, Codable, Hashable {
         self.imageData = imageData
         self.imageDimensions = imageDimensions
         self.extractedText = extractedText
+        self.decodedBarcode = decodedBarcode
+        self.barcodeType = barcodeType
     }
 }

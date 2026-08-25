@@ -67,12 +67,14 @@ Dot-separated three-part JWT strings are split, Base64URL decoded with padding c
 ### UNIX Timestamps
 Numeric timestamp values (10-digit seconds and 13-digit milliseconds) and ISO-8601 strings are converted to localized human-readable dates, absolute time representations, and relative elapsed time descriptions.
 
-### Live Text and On-Device Image OCR
-When an image or screenshot is captured, SORTA runs an asynchronous Apple Vision (`VNRecognizeTextRequest`) pass using the local Neural Engine. Extracted text is indexed for real-time fuzzy history search and can be copied directly via the Live Text inspector without third-party OCR utilities.
+### Live Text, OCR, and Barcode Detection
+When an image or screenshot is captured, SORTA runs an asynchronous Apple Vision (`VNRecognizeTextRequest` & `VNDetectBarcodesRequest`) pass using the local Neural Engine:
+- **Live Text OCR**: Extracted text is indexed for real-time fuzzy history search and can be copied directly via the Live Text inspector.
+- **Smart QR & Barcode Detection**: Automatically parses QR codes, Aztec, DataMatrix, and Barcodes. Users can copy the decoded link or Wi-Fi credential with a single click. For cybersecurity safety, links and executables are never opened automatically.
 
 | Category | Input Criteria | Output / Features |
 | :--- | :--- | :--- |
-| **Image** | Pasteboard image data | On-device Live Text OCR extraction, searchable text within screenshots, tight aspect framing, multi-format drag export |
+| **Image** | Pasteboard image data | Live Text OCR extraction, automatic QR/Barcode payload decoding, searchable image text, multi-format drag export |
 | **JSON** | `{ ... }` or `[ ... ]` strings | Formatted 2-space indented hierarchy, sorted keys, syntax validation |
 | **URL** | `http://` or `https://` URLs | Parsed host badge, path indicators, isolated query parameter table, tracking sanitization |
 | **Color** | `#RRGGBB`, `rgb(...)` strings | Live color swatch, conversions to Hex, RGB, and SwiftUI `Color(red:green:blue:)` |
