@@ -152,13 +152,15 @@ public struct SortaHUDView: View {
 
                     // Main Content View
                     VStack {
-                        if item.isImage {
-                            // Clean Centered Draggable Image Viewer
-                            NativeDraggableImageView(item: item, cornerRadius: 8)
-                                .frame(maxWidth: 520, maxHeight: 340)
+                        if item.isImage, let data = item.imageData, let nsImage = NSImage(data: data) {
+                            // Perfectly Arranged Aspect-Fitted Draggable Image
+                            NativeDraggableImageView(item: item, image: nsImage, cornerRadius: 8)
+                                .aspectRatio(nsImage.size.width / max(nsImage.size.height, 1), contentMode: .fit)
+                                .frame(maxWidth: 510, maxHeight: 330)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
-                                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
                                 )
                                 .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 5)
                                 .padding(16)
@@ -599,16 +601,19 @@ struct NativeURLDetailView: View {
 /// Native AppKit Draggable Image View wrapping NSView with NSDraggingSource
 public struct NativeDraggableImageView: NSViewRepresentable {
     public let item: ClipItem
+    public let image: NSImage
     public var cornerRadius: CGFloat = 8
 
-    public init(item: ClipItem, cornerRadius: CGFloat = 8) {
+    public init(item: ClipItem, image: NSImage, cornerRadius: CGFloat = 8) {
         self.item = item
+        self.image = image
         self.cornerRadius = cornerRadius
     }
 
     public func makeNSView(context: Context) -> DraggableImageNSView {
         let view = DraggableImageNSView()
         view.clipItem = item
+        view.image = image
         view.cornerRadius = cornerRadius
         view.wantsLayer = true
         return view
@@ -616,6 +621,7 @@ public struct NativeDraggableImageView: NSViewRepresentable {
 
     public func updateNSView(_ nsView: DraggableImageNSView, context: Context) {
         nsView.clipItem = item
+        nsView.image = image
         nsView.cornerRadius = cornerRadius
         nsView.needsDisplay = true
     }
@@ -623,6 +629,7 @@ public struct NativeDraggableImageView: NSViewRepresentable {
 
 public final class DraggableImageNSView: NSView, NSDraggingSource {
     public var clipItem: ClipItem?
+    public var image: NSImage?
     public var cornerRadius: CGFloat = 8
     private var mouseDownEvent: NSEvent?
     private var isDragging = false
@@ -667,7 +674,7 @@ public final class DraggableImageNSView: NSView, NSDraggingSource {
     }
 
     private func startDrag(with event: NSEvent) {
-        guard let item = clipItem, let data = item.imageData, let image = NSImage(data: data) else { return }
+        guard let item = clipItem, let data = item.imageData, let img = image ?? NSImage(data: data) else { return }
 
         // 1. Write image to disk temp file for Finder / Desktop / File open
         let tempDir = FileManager.default.temporaryDirectory
@@ -679,13 +686,13 @@ public final class DraggableImageNSView: NSView, NSDraggingSource {
         let pbItem = NSPasteboardItem()
         pbItem.setString(fileURL.absoluteString, forType: .fileURL)
         pbItem.setData(data, forType: NSPasteboard.PasteboardType("public.png"))
-        if let tiff = image.tiffRepresentation {
+        if let tiff = img.tiffRepresentation {
             pbItem.setData(tiff, forType: .tiff)
         }
 
         let draggingItem = NSDraggingItem(pasteboardWriter: pbItem)
         let dragFrame = bounds
-        draggingItem.setDraggingFrame(dragFrame, contents: image)
+        draggingItem.setDraggingFrame(dragFrame, contents: img)
 
         HUDPanel.isDraggingActive = true
         let session = beginDraggingSession(with: [draggingItem], event: event, source: self)
@@ -694,29 +701,13 @@ public final class DraggableImageNSView: NSView, NSDraggingSource {
 
     public override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-        guard let item = clipItem, let data = item.imageData, let image = NSImage(data: data) else { return }
+        guard let img = image else { return }
 
         NSGraphicsContext.saveGraphicsState()
         let path = NSBezierPath(roundedRect: bounds, xRadius: cornerRadius, yRadius: cornerRadius)
         path.addClip()
-
-        let imageRect = calculateFitRect(imageSize: image.size, in: bounds)
-        image.draw(in: imageRect, from: .zero, operation: .sourceOver, fraction: 1.0)
+        img.draw(in: bounds, from: .zero, operation: .sourceOver, fraction: 1.0)
         NSGraphicsContext.restoreGraphicsState()
-    }
-
-    private func calculateFitRect(imageSize: NSSize, in bounds: NSRect) -> NSRect {
-        guard imageSize.width > 0 && imageSize.height > 0 else { return bounds }
-        let aspectWidth = bounds.width / imageSize.width
-        let aspectHeight = bounds.height / imageSize.height
-        let aspectRatio = min(aspectWidth, aspectHeight)
-
-        let newWidth = imageSize.width * aspectRatio
-        let newHeight = imageSize.height * aspectRatio
-        let x = bounds.origin.x + (bounds.width - newWidth) / 2
-        let y = bounds.origin.y + (bounds.height - newHeight) / 2
-
-        return NSRect(x: x, y: y, width: newWidth, height: newHeight)
     }
 }
 

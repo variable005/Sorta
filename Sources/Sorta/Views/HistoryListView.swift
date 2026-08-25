@@ -69,7 +69,7 @@ public struct HistoryListView: View {
                     ScrollView {
                         if viewModel.selectedCategory == .image {
                             // 2-Column Responsive Image Grid
-                            LazyVGrid(columns: [GridItem(.flexible(), spacing: 6), GridItem(.flexible(), spacing: 6)], spacing: 6) {
+                            LazyVGrid(columns: [GridItem(.flexible(), spacing: 8), GridItem(.flexible(), spacing: 8)], spacing: 8) {
                                 ForEach(Array(viewModel.filteredHistory.enumerated()), id: \.element.id) { idx, item in
                                     ImageGridCell(
                                         item: item,
@@ -158,54 +158,30 @@ struct ImageGridCell: View {
 
     var body: some View {
         Button(action: onSelect) {
-            ZStack(alignment: .bottomLeading) {
+            ZStack(alignment: .center) {
                 if let data = item.imageData, let img = NSImage(data: data) {
-                    Color.clear
-                        .frame(height: 75)
-                        .overlay(
-                            Image(nsImage: img)
-                                .resizable()
-                                .scaledToFill()
-                        )
-                        .clipped()
-                        .background(Color.white.opacity(0.04))
+                    Image(nsImage: img)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(height: 80)
+                        .padding(4)
                 } else {
                     Rectangle()
                         .fill(Color.white.opacity(0.04))
-                        .frame(height: 75)
+                        .frame(height: 80)
                         .overlay(
                             Image(systemName: "photo")
                                 .font(.system(size: 20))
                                 .foregroundColor(.secondary)
                         )
                 }
-
-                // Dark gradient overlay at bottom
-                LinearGradient(
-                    colors: [Color.clear, Color.black.opacity(0.8)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 26)
-
-                // Info overlay
-                HStack(spacing: 3) {
-                    if let dims = item.imageDimensions {
-                        Text(dims)
-                            .font(.system(size: 7.5, weight: .semibold, design: .monospaced))
-                            .foregroundColor(.white.opacity(0.9))
-                            .lineLimit(1)
-                    }
-                    Spacer()
-                }
-                .padding(.horizontal, 4)
-                .padding(.bottom, 3)
             }
             .frame(maxWidth: .infinity)
+            .background(Color.white.opacity(0.04))
             .cornerRadius(6)
             .overlay(
                 RoundedRectangle(cornerRadius: 6)
-                    .stroke(isSelected ? Color.white.opacity(0.9) : Color.white.opacity(0.12), lineWidth: isSelected ? 2 : 1)
+                    .stroke(isSelected ? Color.white : Color.white.opacity(0.12), lineWidth: isSelected ? 2 : 1)
             )
             .scaleEffect(isSelected ? 1.02 : 1.0)
             .animation(.spring(response: 0.18, dampingFraction: 0.85), value: isSelected)
@@ -231,15 +207,16 @@ struct CompactHistoryRow: View {
         Button(action: onSelect) {
             HStack(spacing: 8) {
                 if item.isImage, let data = item.imageData, let img = NSImage(data: data) {
-                    Color.clear
-                        .frame(width: 20, height: 20)
+                    Image(nsImage: img)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 26, height: 26)
+                        .background(Color.white.opacity(0.06))
+                        .cornerRadius(4)
                         .overlay(
-                            Image(nsImage: img)
-                                .resizable()
-                                .scaledToFill()
+                            RoundedRectangle(cornerRadius: 4)
+                                .stroke(Color.white.opacity(0.15), lineWidth: 0.8)
                         )
-                        .cornerRadius(3)
-                        .clipped()
                 } else {
                     Image(systemName: item.category.systemImageName)
                         .font(.system(size: 11))
@@ -248,7 +225,7 @@ struct CompactHistoryRow: View {
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(item.rawContent.trimmingCharacters(in: .whitespacesAndNewlines))
+                    Text(item.isImage ? "Image" : item.rawContent.trimmingCharacters(in: .whitespacesAndNewlines))
                         .font(.system(size: 12))
                         .lineLimit(1)
                         .foregroundColor(isSelected ? .white : .primary)
