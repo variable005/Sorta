@@ -10,10 +10,6 @@ public struct SortaHUDView: View {
         self._viewModel = StateObject(wrappedValue: HUDViewModel(watcher: watcher))
     }
 
-    private var imageHistory: [ClipItem] {
-        watcher.history.filter { $0.isImage }
-    }
-
     public var body: some View {
         HStack(spacing: 0) {
             // OPTIONAL SIDEBAR: History Drawer
@@ -85,7 +81,7 @@ public struct SortaHUDView: View {
                 Divider()
             }
 
-            // MAIN AREA: Native macOS Viewer
+            // MAIN AREA: Full Content Viewer
             VStack(spacing: 0) {
                 if let item = viewModel.currentSelectedItem {
                     // Top Header Bar
@@ -157,54 +153,28 @@ public struct SortaHUDView: View {
                     // Main Content View
                     VStack {
                         if item.isImage {
-                            if imageHistory.count > 1 {
-                                // Multi-image grid
-                                ScrollView(.vertical, showsIndicators: true) {
-                                    LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-                                        ForEach(imageHistory) { imgItem in
-                                            ImageGridCard(
-                                                item: imgItem,
-                                                isSelected: imgItem.id == item.id,
-                                                onSelect: {
-                                                    if let idx = viewModel.filteredHistory.firstIndex(where: { $0.id == imgItem.id }) {
-                                                        withAnimation(.spring(response: 0.18, dampingFraction: 0.85)) {
-                                                            viewModel.selectedIndex = idx
-                                                        }
-                                                    }
-                                                },
-                                                onDoubleClick: {
-                                                    watcher.pasteRawItem(imgItem)
-                                                    PanelManager.shared.hidePanel()
-                                                }
-                                            )
-                                        }
-                                    }
-                                    .padding(16)
-                                }
-                            } else {
-                                // Single image preview (Native Draggable)
-                                VStack(spacing: 14) {
-                                    DraggableImageView(item: item, cornerRadius: 8)
-                                        .frame(maxWidth: 400, maxHeight: 260)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .stroke(Color.white.opacity(0.15), lineWidth: 1)
-                                        )
-                                        .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 5)
+                            // Clean Centered Draggable Image Viewer
+                            VStack(spacing: 12) {
+                                NativeDraggableImageView(item: item, cornerRadius: 8)
+                                    .frame(maxWidth: 480, maxHeight: 310)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                                    )
+                                    .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 5)
 
-                                    if let dims = item.imageDimensions {
-                                        Text(dims)
-                                            .font(.system(size: 11, weight: .medium, design: .monospaced))
-                                            .foregroundColor(.secondary)
-                                            .padding(.horizontal, 8)
-                                            .padding(.vertical, 3)
-                                            .background(Color.white.opacity(0.08))
-                                            .cornerRadius(4)
-                                    }
+                                if let dims = item.imageDimensions {
+                                    Text(dims)
+                                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                        .foregroundColor(.secondary)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 3)
+                                        .background(Color.white.opacity(0.08))
+                                        .cornerRadius(4)
                                 }
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .padding(20)
                             }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .padding(16)
                         } else {
                             NativeTextContentView(item: item, watcher: watcher)
                         }
@@ -638,60 +608,8 @@ struct NativeURLDetailView: View {
     }
 }
 
-/// Image Grid Card (Draggable)
-struct ImageGridCard: View {
-    let item: ClipItem
-    let isSelected: Bool
-    let onSelect: () -> Void
-    let onDoubleClick: () -> Void
-
-    var body: some View {
-        Button(action: onSelect) {
-            ZStack(alignment: .bottomLeading) {
-                DraggableImageView(item: item, cornerRadius: 8)
-                    .frame(height: 120)
-
-                LinearGradient(
-                    colors: [Color.clear, Color.black.opacity(0.75)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 32)
-
-                HStack(spacing: 4) {
-                    if let dims = item.imageDimensions {
-                        Text(dims)
-                            .font(.system(size: 8.5, weight: .bold, design: .monospaced))
-                            .foregroundColor(.white)
-                            .lineLimit(1)
-                    }
-                    Spacer()
-                }
-                .padding(.horizontal, 8)
-                .padding(.bottom, 6)
-            }
-            .frame(maxWidth: .infinity)
-            .cornerRadius(8)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(
-                        isSelected ? Color.white : Color.white.opacity(0.15),
-                        lineWidth: isSelected ? 2 : 1
-                    )
-            )
-            .scaleEffect(isSelected ? 1.02 : 1.0)
-            .animation(.spring(response: 0.18, dampingFraction: 0.85), value: isSelected)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .simultaneousGesture(TapGesture(count: 2).onEnded {
-            onDoubleClick()
-        })
-    }
-}
-
-/// Native AppKit Draggable Image View wrapping NSImageView with NSDraggingSource
-public struct DraggableImageView: NSViewRepresentable {
+/// Native AppKit Draggable Image View wrapping NSView with NSDraggingSource
+public struct NativeDraggableImageView: NSViewRepresentable {
     public let item: ClipItem
     public var cornerRadius: CGFloat = 8
 
@@ -700,30 +618,26 @@ public struct DraggableImageView: NSViewRepresentable {
         self.cornerRadius = cornerRadius
     }
 
-    public func makeNSView(context: Context) -> DraggableNSImageView {
-        let view = DraggableNSImageView()
-        view.imageScaling = .scaleProportionallyUpOrDown
+    public func makeNSView(context: Context) -> DraggableImageNSView {
+        let view = DraggableImageNSView()
         view.clipItem = item
+        view.cornerRadius = cornerRadius
         view.wantsLayer = true
-        view.layer?.cornerRadius = cornerRadius
-        view.layer?.masksToBounds = true
-        if let data = item.imageData, let img = NSImage(data: data) {
-            view.image = img
-        }
         return view
     }
 
-    public func updateNSView(_ nsView: DraggableNSImageView, context: Context) {
+    public func updateNSView(_ nsView: DraggableImageNSView, context: Context) {
         nsView.clipItem = item
-        nsView.layer?.cornerRadius = cornerRadius
-        if let data = item.imageData, let img = NSImage(data: data) {
-            nsView.image = img
-        }
+        nsView.cornerRadius = cornerRadius
+        nsView.needsDisplay = true
     }
 }
 
-public final class DraggableNSImageView: NSImageView, NSDraggingSource {
+public final class DraggableImageNSView: NSView, NSDraggingSource {
     public var clipItem: ClipItem?
+    public var cornerRadius: CGFloat = 8
+    private var mouseDownEvent: NSEvent?
+    private var isDragging = false
 
     public func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
         return .copy
@@ -742,13 +656,32 @@ public final class DraggableNSImageView: NSImageView, NSDraggingSource {
         }
     }
 
-    public override func mouseDragged(with event: NSEvent) {
-        guard let item = clipItem, let data = item.imageData, let image = NSImage(data: data) else {
-            super.mouseDragged(with: event)
-            return
-        }
+    public override func mouseDown(with event: NSEvent) {
+        mouseDownEvent = event
+        isDragging = false
+    }
 
-        // 1. Write image to disk temporary file URL for Finder / Desktop / File dialogs
+    public override func mouseDragged(with event: NSEvent) {
+        guard let startEvent = mouseDownEvent, !isDragging else { return }
+        let startPoint = startEvent.locationInWindow
+        let currentPoint = event.locationInWindow
+        let distance = hypot(currentPoint.x - startPoint.x, currentPoint.y - startPoint.y)
+
+        if distance > 2.0 {
+            isDragging = true
+            startDrag(with: startEvent)
+        }
+    }
+
+    public override func mouseUp(with event: NSEvent) {
+        mouseDownEvent = nil
+        isDragging = false
+    }
+
+    private func startDrag(with event: NSEvent) {
+        guard let item = clipItem, let data = item.imageData, let image = NSImage(data: data) else { return }
+
+        // 1. Write image to disk temp file for Finder / Desktop / File open
         let tempDir = FileManager.default.temporaryDirectory
         let fileName = "Sorta_\(item.id.uuidString.prefix(8)).png"
         let fileURL = tempDir.appendingPathComponent(fileName)
@@ -766,7 +699,36 @@ public final class DraggableNSImageView: NSImageView, NSDraggingSource {
         let dragFrame = bounds
         draggingItem.setDraggingFrame(dragFrame, contents: image)
 
-        beginDraggingSession(with: [draggingItem], event: event, source: self)
+        HUDPanel.isDraggingActive = true
+        let session = beginDraggingSession(with: [draggingItem], event: event, source: self)
+        session.animatesToStartingPositionsOnCancelOrFail = true
+    }
+
+    public override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        guard let item = clipItem, let data = item.imageData, let image = NSImage(data: data) else { return }
+
+        NSGraphicsContext.saveGraphicsState()
+        let path = NSBezierPath(roundedRect: bounds, xRadius: cornerRadius, yRadius: cornerRadius)
+        path.addClip()
+
+        let imageRect = calculateFitRect(imageSize: image.size, in: bounds)
+        image.draw(in: imageRect, from: .zero, operation: .sourceOver, fraction: 1.0)
+        NSGraphicsContext.restoreGraphicsState()
+    }
+
+    private func calculateFitRect(imageSize: NSSize, in bounds: NSRect) -> NSRect {
+        guard imageSize.width > 0 && imageSize.height > 0 else { return bounds }
+        let aspectWidth = bounds.width / imageSize.width
+        let aspectHeight = bounds.height / imageSize.height
+        let aspectRatio = min(aspectWidth, aspectHeight)
+
+        let newWidth = imageSize.width * aspectRatio
+        let newHeight = imageSize.height * aspectRatio
+        let x = bounds.origin.x + (bounds.width - newWidth) / 2
+        let y = bounds.origin.y + (bounds.height - newHeight) / 2
+
+        return NSRect(x: x, y: y, width: newWidth, height: newHeight)
     }
 }
 
