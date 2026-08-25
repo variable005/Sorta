@@ -7,6 +7,7 @@ public final class MenuBarManager: ObservableObject {
 
     private var statusItem: NSStatusItem?
     private weak var watcher: PasteboardWatcher?
+    private var contextMenu: NSMenu?
 
     public init() {}
 
@@ -18,12 +19,15 @@ public final class MenuBarManager: ObservableObject {
             let image = NSImage(systemSymbolName: "square.on.square", accessibilityDescription: "Sorta")
             image?.isTemplate = true
             button.image = image
+            button.target = self
+            button.action = #selector(statusBarButtonClicked(_:))
+            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         }
 
-        buildMenu()
+        buildContextMenu()
     }
 
-    public func buildMenu() {
+    private func buildContextMenu() {
         let menu = NSMenu()
 
         let toggleItem = NSMenuItem(
@@ -54,7 +58,22 @@ public final class MenuBarManager: ObservableObject {
         quitItem.target = self
         menu.addItem(quitItem)
 
-        statusItem?.menu = menu
+        self.contextMenu = menu
+    }
+
+    @objc private func statusBarButtonClicked(_ sender: NSStatusBarButton) {
+        let event = NSApp.currentEvent
+        if event?.type == .rightMouseUp {
+            // Right-click opens options menu
+            if let menu = contextMenu {
+                statusItem?.menu = menu
+                statusItem?.button?.performClick(nil)
+                statusItem?.menu = nil // Clear so left click continues to trigger action
+            }
+        } else {
+            // Left-click directly toggles the HUD panel!
+            PanelManager.shared.togglePanel()
+        }
     }
 
     @objc private func togglePanel() {
