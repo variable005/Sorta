@@ -16,24 +16,23 @@ public struct SortaHUDView: View {
 
     public var body: some View {
         HStack(spacing: 0) {
-            // OPTIONAL SIDEBAR: Crystal Glass History Drawer
+            // OPTIONAL SIDEBAR: History Drawer
             if viewModel.isSidebarVisible {
                 VStack(spacing: 0) {
-                    // Search Bar Lens
+                    // Search Bar
                     HStack(spacing: 8) {
                         Image(systemName: "magnifyingglass")
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(.secondary)
                             .font(.system(size: 12))
 
                         TextField("Search...", text: $viewModel.searchQuery)
                             .textFieldStyle(.plain)
                             .font(.system(size: 12))
-                            .foregroundColor(.white)
 
                         if !viewModel.searchQuery.isEmpty {
                             Button(action: { viewModel.searchQuery = "" }) {
                                 Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(.white.opacity(0.7))
+                                    .foregroundColor(.secondary)
                                     .font(.system(size: 11))
                             }
                             .buttonStyle(.plain)
@@ -41,10 +40,9 @@ public struct SortaHUDView: View {
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 8)
-                    .background(Color.white.opacity(0.08))
+                    .background(Color(nsColor: .controlBackgroundColor).opacity(0.4))
 
                     Divider()
-                        .background(Color.white.opacity(0.15))
 
                     // History List
                     HistoryListView(
@@ -60,13 +58,12 @@ public struct SortaHUDView: View {
                     Spacer(minLength: 0)
 
                     Divider()
-                        .background(Color.white.opacity(0.15))
 
                     // Sidebar Footer
                     HStack {
                         Text("\(viewModel.filteredHistory.count) clips")
                             .font(.system(size: 10))
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(.secondary)
 
                         Spacer()
 
@@ -76,26 +73,24 @@ public struct SortaHUDView: View {
                             }
                             .buttonStyle(.plain)
                             .font(.system(size: 10))
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(.secondary)
                         }
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(Color.white.opacity(0.04))
                 }
                 .frame(width: 250)
                 .transition(.move(edge: .leading).combined(with: .opacity))
 
                 Divider()
-                    .background(Color.white.opacity(0.18))
             }
 
-            // MAIN AREA: Ultra-Clear Liquid Glass Canvas
+            // MAIN AREA: Native macOS Viewer
             VStack(spacing: 0) {
                 if let item = viewModel.currentSelectedItem {
-                    // Floating Liquid Glass Header Controls
+                    // Top Header Bar
                     HStack(spacing: 8) {
-                        // Toggle Sidebar Glass Lens
+                        // Toggle Sidebar Button
                         Button(action: {
                             withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
                                 viewModel.isSidebarVisible.toggle()
@@ -103,79 +98,40 @@ public struct SortaHUDView: View {
                         }) {
                             Image(systemName: viewModel.isSidebarVisible ? "sidebar.left" : "clock.arrow.circlepath")
                                 .font(.system(size: 11))
-                                .foregroundColor(viewModel.isSidebarVisible ? .white : .white.opacity(0.85))
-                                .frame(width: 28, height: 28)
-                                .background(
-                                    LinearGradient(
-                                        colors: [
-                                            Color.white.opacity(viewModel.isSidebarVisible ? 0.30 : 0.16),
-                                            Color.white.opacity(viewModel.isSidebarVisible ? 0.15 : 0.06)
-                                        ],
-                                        startPoint: .top,
-                                        endPoint: .bottom
-                                    )
-                                )
-                                .cornerRadius(7)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 7)
-                                        .stroke(Color.white.opacity(0.30), lineWidth: 1)
-                                )
+                                .foregroundColor(viewModel.isSidebarVisible ? .primary : .secondary)
+                                .frame(width: 26, height: 26)
+                                .background(Color.white.opacity(viewModel.isSidebarVisible ? 0.15 : (viewModel.isHovering ? 0.08 : 0.0)))
+                                .cornerRadius(6)
                         }
                         .buttonStyle(.plain)
 
-                        // Category Type Lens
+                        // Category Icon
                         Image(systemName: item.category.systemImageName)
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(.white)
-                            .frame(width: 28, height: 28)
-                            .background(
-                                LinearGradient(
-                                    colors: [
-                                        Color.white.opacity(0.18),
-                                        Color.white.opacity(0.06)
-                                    ],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
-                            .cornerRadius(7)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 7)
-                                    .stroke(Color.white.opacity(0.26), lineWidth: 1)
-                            )
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.secondary)
+                            .frame(width: 26, height: 26)
+                            .background(Color.white.opacity(0.08))
+                            .cornerRadius(6)
 
                         Spacer(minLength: 12)
 
-                        // Action Lenses (Reveals on Hover)
+                        // Action Buttons (Reveals on Hover)
                         HStack(spacing: 6) {
-                            // Copy Lens Button
+                            // Copy Button
                             Button(action: {
                                 viewModel.copyWithAnimation(item: item)
                             }) {
                                 Image(systemName: viewModel.justCopied ? "checkmark" : "doc.on.doc")
                                     .font(.system(size: 11, weight: viewModel.justCopied ? .bold : .regular))
-                                    .foregroundColor(viewModel.justCopied ? .green : .white)
-                                    .frame(width: 28, height: 28)
-                                    .background(
-                                        LinearGradient(
-                                            colors: [
-                                                Color.white.opacity(viewModel.justCopied ? 0.35 : 0.20),
-                                                Color.white.opacity(viewModel.justCopied ? 0.18 : 0.08)
-                                            ],
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        )
-                                    )
-                                    .cornerRadius(7)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 7)
-                                            .stroke(Color.white.opacity(viewModel.justCopied ? 0.50 : 0.30), lineWidth: 1)
-                                    )
+                                    .foregroundColor(viewModel.justCopied ? .green : .secondary)
+                                    .frame(width: 26, height: 26)
+                                    .background(Color.white.opacity(viewModel.justCopied ? 0.18 : 0.08))
+                                    .cornerRadius(6)
                                     .animation(.spring(response: 0.2, dampingFraction: 0.8), value: viewModel.justCopied)
                             }
                             .buttonStyle(.plain)
 
-                            // Paste Lens Button
+                            // Paste Button
                             Button(action: {
                                 watcher.pasteRawItem(item)
                                 PanelManager.shared.hidePanel()
@@ -183,19 +139,9 @@ public struct SortaHUDView: View {
                                 Image(systemName: "return")
                                     .font(.system(size: 11, weight: .bold))
                                     .foregroundColor(.black)
-                                    .frame(width: 28, height: 28)
-                                    .background(
-                                        LinearGradient(
-                                            colors: [
-                                                Color.white,
-                                                Color.white.opacity(0.92)
-                                            ],
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        )
-                                    )
-                                    .cornerRadius(7)
-                                    .shadow(color: Color.white.opacity(0.40), radius: 6, x: 0, y: 1)
+                                    .frame(width: 26, height: 26)
+                                    .background(Color.white)
+                                    .cornerRadius(6)
                             }
                             .buttonStyle(.plain)
                         }
@@ -207,9 +153,8 @@ public struct SortaHUDView: View {
                     .padding(.vertical, 10)
 
                     Divider()
-                        .background(Color.white.opacity(0.12))
 
-                    // Direct Transparent Content
+                    // Main Content View
                     VStack {
                         if item.isImage {
                             if imageHistory.count > 1 {
@@ -244,48 +189,28 @@ public struct SortaHUDView: View {
                                             .resizable()
                                             .aspectRatio(contentMode: .fit)
                                             .frame(maxWidth: 380, maxHeight: 250)
-                                            .cornerRadius(12)
-                                            .shadow(color: Color.black.opacity(0.40), radius: 18, x: 0, y: 8)
+                                            .cornerRadius(8)
                                             .overlay(
-                                                RoundedRectangle(cornerRadius: 12)
-                                                    .stroke(
-                                                        LinearGradient(
-                                                            colors: [Color.white.opacity(0.45), Color.white.opacity(0.15)],
-                                                            startPoint: .topLeading,
-                                                            endPoint: .bottomTrailing
-                                                        ),
-                                                        lineWidth: 1.2
-                                                    )
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .stroke(Color.white.opacity(0.15), lineWidth: 1)
                                             )
                                     }
 
                                     if let dims = item.imageDimensions {
                                         Text(dims)
-                                            .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
-                                            .foregroundColor(.white)
-                                            .padding(.horizontal, 10)
-                                            .padding(.vertical, 4)
-                                            .background(
-                                                LinearGradient(
-                                                    colors: [Color.white.opacity(0.20), Color.white.opacity(0.08)],
-                                                    startPoint: .top,
-                                                    endPoint: .bottom
-                                                )
-                                            )
-                                            .cornerRadius(6)
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 6)
-                                                    .stroke(Color.white.opacity(0.28), lineWidth: 1)
-                                            )
-                                            .fixedSize()
+                                            .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                            .foregroundColor(.secondary)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 3)
+                                            .background(Color.white.opacity(0.08))
+                                            .cornerRadius(4)
                                     }
                                 }
                                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                                 .padding(20)
                             }
                         } else {
-                            // Fluid Liquid Glass Text View
-                            LiquidGlassTextContent(item: item, watcher: watcher)
+                            NativeTextContentView(item: item, watcher: watcher)
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -296,10 +221,10 @@ public struct SortaHUDView: View {
                     VStack(spacing: 10) {
                         Image(systemName: "doc.on.clipboard")
                             .font(.system(size: 32))
-                            .foregroundColor(.white.opacity(0.5))
+                            .foregroundColor(.secondary.opacity(0.5))
                         Text("No clipboard content")
                             .font(.system(size: 13))
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(.secondary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
@@ -307,42 +232,12 @@ public struct SortaHUDView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(width: viewModel.isSidebarVisible ? 720 : 580, height: 420)
-        .background(
-            ZStack {
-                // High-transparency crystal glass visual effect
-                VisualEffectBlur(material: .underWindowBackground, blendingMode: .behindWindow)
-
-                // Refractive Glass Specular Sheen (Diagonal ambient light beam)
-                LinearGradient(
-                    colors: [
-                        Color.white.opacity(0.18),
-                        Color.white.opacity(0.04),
-                        Color.clear,
-                        Color.white.opacity(0.02)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            }
-        )
+        .background(VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow))
         .overlay(
-            // Prismatic Specular Glass Bevel
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(
-                    LinearGradient(
-                        colors: [
-                            Color.white.opacity(0.60),
-                            Color.white.opacity(0.25),
-                            Color.white.opacity(0.08),
-                            Color.white.opacity(0.20)
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1.2
-                )
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color.white.opacity(0.14), lineWidth: 1)
         )
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
         .onHover { hovering in
             withAnimation(.spring(response: 0.2, dampingFraction: 0.85)) {
                 viewModel.isHovering = hovering
@@ -356,8 +251,8 @@ public struct SortaHUDView: View {
     }
 }
 
-/// Content Views floating naturally on the Liquid Glass canvas
-struct LiquidGlassTextContent: View {
+/// Standard Native macOS Text Content Viewers
+struct NativeTextContentView: View {
     let item: ClipItem
     let watcher: PasteboardWatcher
 
@@ -365,17 +260,17 @@ struct LiquidGlassTextContent: View {
         VStack(spacing: 0) {
             switch item.category {
             case .color:
-                ColorDetailGlassView(rawContent: item.rawContent, watcher: watcher)
+                NativeColorDetailView(rawContent: item.rawContent, watcher: watcher)
             case .timestamp:
-                TimestampDetailGlassView(rawContent: item.rawContent)
+                NativeTimestampDetailView(rawContent: item.rawContent)
             case .jwt:
-                JWTDetailGlassView(rawContent: item.rawContent)
+                NativeJWTDetailView(rawContent: item.rawContent)
             case .json:
-                JSONDetailGlassView(rawContent: item.rawContent)
+                NativeJSONDetailView(rawContent: item.rawContent)
             case .url:
-                URLDetailGlassView(rawContent: item.rawContent)
+                NativeURLDetailView(rawContent: item.rawContent)
             default:
-                StandardTextGlassView(rawContent: item.rawContent, category: item.category)
+                NativeStandardTextView(rawContent: item.rawContent, category: item.category)
             }
         }
         .padding(.horizontal, 16)
@@ -383,8 +278,8 @@ struct LiquidGlassTextContent: View {
     }
 }
 
-/// Standard Text floating directly on Liquid Glass
-struct StandardTextGlassView: View {
+/// Standard Text View
+struct NativeStandardTextView: View {
     let rawContent: String
     let category: ClipCategory
 
@@ -395,9 +290,8 @@ struct StandardTextGlassView: View {
     var body: some View {
         ScrollView(.vertical, showsIndicators: true) {
             Text(rawContent)
-                .font(.system(size: isMonospaced ? 13 : 14, weight: .regular, design: isMonospaced ? .monospaced : .default))
-                .foregroundColor(Color.white)
-                .shadow(color: Color.black.opacity(0.35), radius: 2, x: 0, y: 1)
+                .font(.system(size: isMonospaced ? 12.5 : 13.5, weight: .regular, design: isMonospaced ? .monospaced : .default))
+                .foregroundColor(.primary)
                 .lineSpacing(isMonospaced ? 4 : 5)
                 .multilineTextAlignment(.leading)
                 .textSelection(.enabled)
@@ -408,8 +302,8 @@ struct StandardTextGlassView: View {
     }
 }
 
-/// JSON Card (Formatted on Liquid Glass)
-struct JSONDetailGlassView: View {
+/// JSON View (2-Space Auto-Pretty-Printed)
+struct NativeJSONDetailView: View {
     let rawContent: String
 
     var prettyJSON: String {
@@ -426,9 +320,8 @@ struct JSONDetailGlassView: View {
     var body: some View {
         ScrollView([.vertical, .horizontal], showsIndicators: true) {
             Text(prettyJSON)
-                .font(.system(size: 13, weight: .regular, design: .monospaced))
-                .foregroundColor(Color.white)
-                .shadow(color: Color.black.opacity(0.35), radius: 2, x: 0, y: 1)
+                .font(.system(size: 12.5, weight: .regular, design: .monospaced))
+                .foregroundColor(.primary)
                 .lineSpacing(4)
                 .multilineTextAlignment(.leading)
                 .textSelection(.enabled)
@@ -440,7 +333,7 @@ struct JSONDetailGlassView: View {
 }
 
 /// JWT Token View
-struct JWTDetailGlassView: View {
+struct NativeJWTDetailView: View {
     let rawContent: String
 
     var decodedPayload: String? {
@@ -463,15 +356,14 @@ struct JWTDetailGlassView: View {
         if let payload = decodedPayload {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Decoded Claims")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(.white.opacity(0.85))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.secondary)
                     .padding(.horizontal, 2)
 
                 ScrollView([.vertical, .horizontal], showsIndicators: true) {
                     Text(payload)
-                        .font(.system(size: 13, weight: .regular, design: .monospaced))
-                        .foregroundColor(Color.white)
-                        .shadow(color: Color.black.opacity(0.35), radius: 2, x: 0, y: 1)
+                        .font(.system(size: 12.5, weight: .regular, design: .monospaced))
+                        .foregroundColor(.primary)
                         .lineSpacing(4)
                         .textSelection(.enabled)
                         .padding(.vertical, 4)
@@ -480,13 +372,13 @@ struct JWTDetailGlassView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         } else {
-            StandardTextGlassView(rawContent: rawContent, category: .jwt)
+            NativeStandardTextView(rawContent: rawContent, category: .jwt)
         }
     }
 }
 
 /// Color Detail View
-struct ColorDetailGlassView: View {
+struct NativeColorDetailView: View {
     let rawContent: String
     let watcher: PasteboardWatcher
 
@@ -509,26 +401,19 @@ struct ColorDetailGlassView: View {
     var body: some View {
         if let col = parsedColor {
             VStack(spacing: 16) {
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: 10)
                     .fill(Color(red: col.r, green: col.g, blue: col.b))
-                    .frame(width: 84, height: 84)
+                    .frame(width: 80, height: 80)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 14)
-                            .stroke(
-                                LinearGradient(
-                                    colors: [Color.white.opacity(0.60), Color.white.opacity(0.20)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1.2
-                            )
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.white.opacity(0.2), lineWidth: 1)
                     )
-                    .shadow(color: Color.black.opacity(0.35), radius: 12, x: 0, y: 6)
+                    .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
 
-                VStack(spacing: 8) {
-                    ColorGlassRow(label: "HEX", value: col.hex) { watcher.copyToClipboard(content: col.hex) }
-                    ColorGlassRow(label: "RGB", value: col.rgb) { watcher.copyToClipboard(content: col.rgb) }
-                    ColorGlassRow(label: "SwiftUI", value: String(format: "Color(red: %.2f, green: %.2f, blue: %.2f)", col.r, col.g, col.b)) {
+                VStack(spacing: 6) {
+                    NativeColorRow(label: "HEX", value: col.hex) { watcher.copyToClipboard(content: col.hex) }
+                    NativeColorRow(label: "RGB", value: col.rgb) { watcher.copyToClipboard(content: col.rgb) }
+                    NativeColorRow(label: "SwiftUI", value: String(format: "Color(red: %.2f, green: %.2f, blue: %.2f)", col.r, col.g, col.b)) {
                         watcher.copyToClipboard(content: String(format: "Color(red: %.3f, green: %.3f, blue: %.3f)", col.r, col.g, col.b))
                     }
                 }
@@ -537,12 +422,12 @@ struct ColorDetailGlassView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(16)
         } else {
-            StandardTextGlassView(rawContent: rawContent, category: .color)
+            NativeStandardTextView(rawContent: rawContent, category: .color)
         }
     }
 }
 
-struct ColorGlassRow: View {
+struct NativeColorRow: View {
     let label: String
     let value: String
     let onCopy: () -> Void
@@ -551,12 +436,12 @@ struct ColorGlassRow: View {
         HStack {
             Text(label)
                 .font(.system(size: 11, weight: .bold, design: .monospaced))
-                .foregroundColor(.white.opacity(0.85))
+                .foregroundColor(.secondary)
                 .frame(width: 55, alignment: .leading)
 
             Text(value)
                 .font(.system(size: 12, design: .monospaced))
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
                 .textSelection(.enabled)
 
             Spacer()
@@ -564,32 +449,22 @@ struct ColorGlassRow: View {
             Button(action: onCopy) {
                 Image(systemName: "doc.on.doc")
                     .font(.system(size: 10))
-                    .foregroundColor(.white)
+                    .foregroundColor(.secondary)
                     .padding(4)
-                    .background(Color.white.opacity(0.16))
+                    .background(Color.white.opacity(0.1))
                     .cornerRadius(4)
             }
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(
-            LinearGradient(
-                colors: [Color.white.opacity(0.16), Color.white.opacity(0.06)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        )
+        .padding(.vertical, 5)
+        .background(Color.white.opacity(0.06))
         .cornerRadius(6)
-        .overlay(
-            RoundedRectangle(cornerRadius: 6)
-                .stroke(Color.white.opacity(0.24), lineWidth: 0.8)
-        )
     }
 }
 
-/// Timestamp View
-struct TimestampDetailGlassView: View {
+/// Timestamp Detail View
+struct NativeTimestampDetailView: View {
     let rawContent: String
 
     var parsedDate: Date? {
@@ -606,61 +481,41 @@ struct TimestampDetailGlassView: View {
         if let date = parsedDate {
             VStack(spacing: 14) {
                 Image(systemName: "calendar.badge.clock")
-                    .font(.system(size: 32))
-                    .foregroundColor(.white.opacity(0.9))
+                    .font(.system(size: 30))
+                    .foregroundColor(.secondary)
 
-                VStack(spacing: 5) {
+                VStack(spacing: 4) {
                     Text(formattedDate(date))
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.primary)
 
                     Text(formattedTime(date))
                         .font(.system(size: 13, design: .monospaced))
-                        .foregroundColor(.white.opacity(0.92))
+                        .foregroundColor(.secondary)
                 }
 
                 HStack(spacing: 8) {
                     Text("Relative: \(relativeTime(date))")
                         .font(.system(size: 10.5))
-                        .foregroundColor(.white.opacity(0.9))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(
-                            LinearGradient(
-                                colors: [Color.white.opacity(0.18), Color.white.opacity(0.07)],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.white.opacity(0.08))
                         .cornerRadius(6)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 6)
-                                .stroke(Color.white.opacity(0.26), lineWidth: 0.8)
-                        )
 
                     Text("Epoch: \(Int(date.timeIntervalSince1970))")
                         .font(.system(size: 10.5, design: .monospaced))
-                        .foregroundColor(.white.opacity(0.9))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(
-                            LinearGradient(
-                                colors: [Color.white.opacity(0.18), Color.white.opacity(0.07)],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.white.opacity(0.08))
                         .cornerRadius(6)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 6)
-                                .stroke(Color.white.opacity(0.26), lineWidth: 0.8)
-                        )
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding(16)
         } else {
-            StandardTextGlassView(rawContent: rawContent, category: .timestamp)
+            NativeStandardTextView(rawContent: rawContent, category: .timestamp)
         }
     }
 
@@ -683,8 +538,8 @@ struct TimestampDetailGlassView: View {
     }
 }
 
-/// URL Detail View with sheer crystal lenses
-struct URLDetailGlassView: View {
+/// URL Detail View
+struct NativeURLDetailView: View {
     let rawContent: String
 
     var urlComponents: URLComponents? {
@@ -693,12 +548,10 @@ struct URLDetailGlassView: View {
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: true) {
-            VStack(alignment: .leading, spacing: 14) {
-                // Pure clean URL text floating on glass
+            VStack(alignment: .leading, spacing: 12) {
                 Text(rawContent)
-                    .font(.system(size: 13.5, weight: .medium))
-                    .foregroundColor(.white)
-                    .shadow(color: Color.black.opacity(0.35), radius: 2, x: 0, y: 1)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.primary)
                     .lineSpacing(4)
                     .textSelection(.enabled)
                     .padding(.vertical, 2)
@@ -710,89 +563,59 @@ struct URLDetailGlassView: View {
                             HStack(spacing: 4) {
                                 Text("Host:")
                                     .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(.white.opacity(0.7))
+                                    .foregroundColor(.secondary)
                                 Text(host)
-                                    .font(.system(size: 10, weight: .semibold))
-                                    .foregroundColor(.white)
+                                    .font(.system(size: 10, weight: .medium))
+                                    .foregroundColor(.primary)
                             }
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
-                            .background(
-                                LinearGradient(
-                                    colors: [Color.white.opacity(0.18), Color.white.opacity(0.06)],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
-                            .cornerRadius(6)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .stroke(Color.white.opacity(0.24), lineWidth: 0.8)
-                            )
+                            .background(Color.white.opacity(0.08))
+                            .cornerRadius(5)
                         }
 
                         if !comps.path.isEmpty && comps.path != "/" {
                             HStack(spacing: 4) {
                                 Text("Path:")
                                     .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(.white.opacity(0.7))
+                                    .foregroundColor(.secondary)
                                 Text(comps.path)
                                     .font(.system(size: 10))
-                                    .foregroundColor(.white)
+                                    .foregroundColor(.primary)
                             }
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
-                            .background(
-                                LinearGradient(
-                                    colors: [Color.white.opacity(0.18), Color.white.opacity(0.06)],
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
-                            .cornerRadius(6)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 6)
-                                    .stroke(Color.white.opacity(0.24), lineWidth: 0.8)
-                            )
+                            .background(Color.white.opacity(0.08))
+                            .cornerRadius(5)
                         }
                     }
 
                     if let queryItems = comps.queryItems, !queryItems.isEmpty {
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: 5) {
                             Text("Query Parameters (\(queryItems.count))")
                                 .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(.white.opacity(0.85))
+                                .foregroundColor(.secondary)
 
-                            VStack(spacing: 4) {
+                            VStack(spacing: 3) {
                                 ForEach(queryItems, id: \.name) { q in
                                     HStack {
                                         Text(q.name)
                                             .font(.system(size: 11, weight: .bold, design: .monospaced))
-                                            .foregroundColor(.white.opacity(0.95))
+                                            .foregroundColor(.primary.opacity(0.9))
                                             .frame(minWidth: 70, alignment: .leading)
 
                                         Text(q.value ?? "")
                                             .font(.system(size: 11, design: .monospaced))
-                                            .foregroundColor(.white.opacity(0.8))
+                                            .foregroundColor(.secondary)
                                             .lineLimit(1)
                                             .truncationMode(.middle)
 
                                         Spacer()
                                     }
                                     .padding(.horizontal, 8)
-                                    .padding(.vertical, 5)
-                                    .background(
-                                        LinearGradient(
-                                            colors: [Color.white.opacity(0.12), Color.white.opacity(0.04)],
-                                            startPoint: .top,
-                                            endPoint: .bottom
-                                        )
-                                    )
-                                    .cornerRadius(5)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 5)
-                                            .stroke(Color.white.opacity(0.18), lineWidth: 0.8)
-                                    )
+                                    .padding(.vertical, 4)
+                                    .background(Color.white.opacity(0.04))
+                                    .cornerRadius(4)
                                 }
                             }
                         }
@@ -834,16 +657,16 @@ struct ImageGridCard: View {
                         .overlay(
                             Image(systemName: "photo")
                                 .font(.system(size: 24))
-                                .foregroundColor(.white.opacity(0.6))
+                                .foregroundColor(.secondary)
                         )
                 }
 
                 LinearGradient(
-                    colors: [Color.clear, Color.black.opacity(0.80)],
+                    colors: [Color.clear, Color.black.opacity(0.75)],
                     startPoint: .top,
                     endPoint: .bottom
                 )
-                .frame(height: 34)
+                .frame(height: 32)
 
                 HStack(spacing: 4) {
                     if let dims = item.imageDimensions {
@@ -862,7 +685,7 @@ struct ImageGridCard: View {
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(
-                        isSelected ? Color.white : Color.white.opacity(0.25),
+                        isSelected ? Color.white : Color.white.opacity(0.15),
                         lineWidth: isSelected ? 2 : 1
                     )
             )
@@ -877,7 +700,7 @@ struct ImageGridCard: View {
     }
 }
 
-/// Native macOS AppKit Visual Effect Blur with ultra-clear underWindowBackground
+/// Native macOS AppKit Visual Effect Blur
 struct VisualEffectBlur: NSViewRepresentable {
     var material: NSVisualEffectView.Material
     var blendingMode: NSVisualEffectView.BlendingMode
