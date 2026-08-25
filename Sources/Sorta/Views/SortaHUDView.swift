@@ -154,27 +154,15 @@ public struct SortaHUDView: View {
                     VStack {
                         if item.isImage {
                             // Clean Centered Draggable Image Viewer
-                            VStack(spacing: 12) {
-                                NativeDraggableImageView(item: item, cornerRadius: 8)
-                                    .frame(maxWidth: 480, maxHeight: 310)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(Color.white.opacity(0.12), lineWidth: 1)
-                                    )
-                                    .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 5)
-
-                                if let dims = item.imageDimensions {
-                                    Text(dims)
-                                        .font(.system(size: 11, weight: .medium, design: .monospaced))
-                                        .foregroundColor(.secondary)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 3)
-                                        .background(Color.white.opacity(0.08))
-                                        .cornerRadius(4)
-                                }
-                            }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .padding(16)
+                            NativeDraggableImageView(item: item, cornerRadius: 8)
+                                .frame(maxWidth: 520, maxHeight: 340)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                                )
+                                .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 5)
+                                .padding(16)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
                         } else {
                             NativeTextContentView(item: item, watcher: watcher)
                         }
