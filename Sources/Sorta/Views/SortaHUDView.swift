@@ -394,13 +394,7 @@ struct SuperActionButton: View {
                                     return
                                 }
                                 DispatchQueue.main.async {
-                                    if let idx = watcher.history.firstIndex(where: { $0.id == item.id }) {
-                                        watcher.history[idx].extractedText = text
-                                        if watcher.currentItem?.id == item.id {
-                                            watcher.currentItem?.extractedText = text
-                                        }
-                                        watcher.saveState()
-                                    }
+                                    watcher.updateExtractedText(for: item.id, text: text)
                                     watcher.copyToClipboard(content: text)
                                     withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
                                         viewModel.showLiveTextView = true

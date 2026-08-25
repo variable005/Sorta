@@ -172,6 +172,28 @@ public final class PasteboardWatcher: ObservableObject {
         saveState()
     }
 
+    public func updateExtractedText(for itemId: UUID, text: String) {
+        if let idx = history.firstIndex(where: { $0.id == itemId }) {
+            history[idx].extractedText = text
+            if currentItem?.id == itemId {
+                currentItem?.extractedText = text
+            }
+            saveState()
+        }
+    }
+
+    public func updateBarcode(for itemId: UUID, payload: String, type: String) {
+        if let idx = history.firstIndex(where: { $0.id == itemId }) {
+            history[idx].decodedBarcode = payload
+            history[idx].barcodeType = type
+            if currentItem?.id == itemId {
+                currentItem?.decodedBarcode = payload
+                currentItem?.barcodeType = type
+            }
+            saveState()
+        }
+    }
+
     public func applyTransformAndPaste(option: TransformOption) {
         copyToClipboard(content: option.transformedContent)
 
