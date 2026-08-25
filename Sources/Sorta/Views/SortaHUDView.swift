@@ -96,7 +96,7 @@ public struct SortaHUDView: View {
                     HStack(spacing: 8) {
                         // Toggle Sidebar Button
                         Button(action: {
-                            withAnimation(.easeInOut(duration: 0.2)) {
+                            withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
                                 viewModel.isSidebarVisible.toggle()
                             }
                         }) {
@@ -137,37 +137,42 @@ public struct SortaHUDView: View {
 
                         Spacer(minLength: 12)
 
-                        // Action Buttons (Reveals on Hover)
+                        // Action Buttons (Reveals on Hover, Spring-interactive)
                         HStack(spacing: 6) {
-                            // Star / Pin
+                            // Star / Pin (Apple Spring Bounce)
                             Button(action: {
-                                watcher.togglePin(item: item)
+                                withAnimation(.spring(response: 0.24, dampingFraction: 0.52)) {
+                                    watcher.togglePin(item: item)
+                                }
                             }) {
                                 Image(systemName: item.isPinned ? "star.fill" : "star")
                                     .font(.system(size: 11))
                                     .foregroundColor(item.isPinned ? .yellow : .secondary)
+                                    .scaleEffect(item.isPinned ? 1.20 : 1.0)
+                                    .animation(.spring(response: 0.24, dampingFraction: 0.52), value: item.isPinned)
                                     .frame(width: 24, height: 24)
                                     .background(Color.white.opacity(0.08))
                                     .cornerRadius(5)
                             }
                             .buttonStyle(.plain)
 
-                            // Copy
+                            // Copy (Morphs to Checkmark on Copy)
                             Button(action: {
-                                watcher.copyItemToClipboard(item)
-                                PanelManager.shared.hidePanel()
+                                viewModel.copyWithAnimation(item: item)
                             }) {
                                 HStack(spacing: 4) {
-                                    Image(systemName: "doc.on.doc")
-                                        .font(.system(size: 10))
-                                    Text("Copy")
+                                    Image(systemName: viewModel.justCopied ? "checkmark" : "doc.on.doc")
+                                        .font(.system(size: 10, weight: viewModel.justCopied ? .bold : .regular))
+                                    Text(viewModel.justCopied ? "Copied" : "Copy")
                                         .font(.system(size: 11, weight: .medium))
                                         .lineLimit(1)
                                 }
+                                .foregroundColor(viewModel.justCopied ? .green : .primary)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(Color.white.opacity(0.08))
+                                .background(Color.white.opacity(viewModel.justCopied ? 0.16 : 0.08))
                                 .cornerRadius(5)
+                                .animation(.spring(response: 0.2, dampingFraction: 0.8), value: viewModel.justCopied)
                             }
                             .buttonStyle(.plain)
 
@@ -193,7 +198,7 @@ public struct SortaHUDView: View {
                         }
                         .fixedSize(horizontal: true, vertical: false)
                         .opacity(viewModel.isHovering ? 1.0 : 0.0)
-                        .animation(.easeInOut(duration: 0.15), value: viewModel.isHovering)
+                        .animation(.spring(response: 0.2, dampingFraction: 0.85), value: viewModel.isHovering)
                     }
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
@@ -202,7 +207,7 @@ public struct SortaHUDView: View {
                     Divider()
                         .background(Color.white.opacity(0.08))
 
-                    // MAIN CONTENT VIEWPORT (Edge-to-Edge Clean Card)
+                    // MAIN CONTENT VIEWPORT (Edge-to-Edge Clean Card with Crossfade)
                     VStack {
                         if item.isImage {
                             if imageHistory.count > 1 {
@@ -215,7 +220,9 @@ public struct SortaHUDView: View {
                                                 isSelected: imgItem.id == item.id,
                                                 onSelect: {
                                                     if let idx = viewModel.filteredHistory.firstIndex(where: { $0.id == imgItem.id }) {
-                                                        viewModel.selectedIndex = idx
+                                                        withAnimation(.spring(response: 0.18, dampingFraction: 0.85)) {
+                                                            viewModel.selectedIndex = idx
+                                                        }
                                                     }
                                                 },
                                                 onDoubleClick: {
@@ -223,7 +230,9 @@ public struct SortaHUDView: View {
                                                     PanelManager.shared.hidePanel()
                                                 },
                                                 onTogglePin: {
-                                                    watcher.togglePin(item: imgItem)
+                                                    withAnimation(.spring(response: 0.24, dampingFraction: 0.52)) {
+                                                        watcher.togglePin(item: imgItem)
+                                                    }
                                                 }
                                             )
                                         }
@@ -267,6 +276,9 @@ public struct SortaHUDView: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(Color.black.opacity(0.16))
+                    .id(item.id)
+                    .transition(.opacity)
+                    .animation(.easeInOut(duration: 0.12), value: item.id)
                 } else {
                     VStack(spacing: 10) {
                         Image(systemName: "doc.on.clipboard")
@@ -294,7 +306,7 @@ public struct SortaHUDView: View {
         )
         .clipShape(RoundedRectangle(cornerRadius: 14))
         .onHover { hovering in
-            withAnimation(.easeInOut(duration: 0.15)) {
+            withAnimation(.spring(response: 0.2, dampingFraction: 0.85)) {
                 viewModel.isHovering = hovering
             }
         }
@@ -764,6 +776,7 @@ struct ImageGridCard: View {
                         Image(systemName: "star.fill")
                             .font(.system(size: 8.5))
                             .foregroundColor(.yellow)
+                            .scaleEffect(1.1)
                     }
                 }
                 .padding(.horizontal, 8)
@@ -775,6 +788,8 @@ struct ImageGridCard: View {
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(isSelected ? Color.white : Color.white.opacity(0.12), lineWidth: isSelected ? 2 : 1)
             )
+            .scaleEffect(isSelected ? 1.02 : 1.0)
+            .animation(.spring(response: 0.18, dampingFraction: 0.85), value: isSelected)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

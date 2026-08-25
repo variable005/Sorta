@@ -44,15 +44,29 @@ public final class PanelManager: ObservableObject {
             panel.setFrameOrigin(NSPoint(x: x, y: y))
         }
 
-        // Activate panel and make it key for instant keyboard focus
+        panel.alphaValue = 0.0
         NSApp.activate(ignoringOtherApps: true)
         panel.makeKeyAndOrderFront(nil)
         isVisible = true
+
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.14
+            context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+            panel.animator().alphaValue = 1.0
+        }
     }
 
     public func hidePanel() {
-        guard isVisible else { return }
-        panel?.orderOut(nil)
+        guard isVisible, let panel = panel else { return }
         isVisible = false
+
+        NSAnimationContext.runAnimationGroup({ context in
+            context.duration = 0.10
+            context.timingFunction = CAMediaTimingFunction(name: .easeIn)
+            panel.animator().alphaValue = 0.0
+        }, completionHandler: { [weak panel] in
+            panel?.orderOut(nil)
+            panel?.alphaValue = 1.0
+        })
     }
 }

@@ -10,6 +10,7 @@ public final class HUDViewModel: ObservableObject {
     @Published public var selectedIndex: Int = 0
     @Published public var isSidebarVisible: Bool = false
     @Published public var isHovering: Bool = false
+    @Published public var justCopied: Bool = false
 
     public weak var watcher: PasteboardWatcher?
     private var cancellables = Set<AnyCancellable>()
@@ -53,6 +54,17 @@ public final class HUDViewModel: ObservableObject {
         return watcher?.currentItem ?? items.first
     }
 
+    public func copyWithAnimation(item: ClipItem) {
+        watcher?.copyItemToClipboard(item)
+        withAnimation(.spring(response: 0.22, dampingFraction: 0.75)) {
+            justCopied = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) { [weak self] in
+            PanelManager.shared.hidePanel()
+            self?.justCopied = false
+        }
+    }
+
     public func handleKeyDown(event: NSEvent) -> Bool {
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
 
@@ -62,30 +74,34 @@ public final class HUDViewModel: ObservableObject {
             return true
         }
 
-        // 2. Tab or Cmd + H -> Toggle Sidebar
+        // 2. Tab or Cmd + H -> Toggle Sidebar with Spring
         if event.keyCode == 48 || (modifiers == .command && event.keyCode == 4) { // Tab or Cmd + H
-            withAnimation(.easeInOut(duration: 0.2)) {
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
                 isSidebarVisible.toggle()
             }
             return true
         }
 
-        // 3. Up / Down Arrows for History Navigation (automatically reveals sidebar if hidden)
+        // 3. Up / Down Arrows for History Navigation
         if event.keyCode == 126 { // Up Arrow
             if !isSidebarVisible {
-                withAnimation(.easeInOut(duration: 0.2)) { isSidebarVisible = true }
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) { isSidebarVisible = true }
             }
             if selectedIndex > 0 {
-                selectedIndex -= 1
+                withAnimation(.spring(response: 0.18, dampingFraction: 0.88)) {
+                    selectedIndex -= 1
+                }
             }
             return true
         } else if event.keyCode == 125 { // Down Arrow
             if !isSidebarVisible {
-                withAnimation(.easeInOut(duration: 0.2)) { isSidebarVisible = true }
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) { isSidebarVisible = true }
             }
             let count = filteredHistory.count
             if selectedIndex < count - 1 {
-                selectedIndex += 1
+                withAnimation(.spring(response: 0.18, dampingFraction: 0.88)) {
+                    selectedIndex += 1
+                }
             }
             return true
         }
@@ -99,11 +115,10 @@ public final class HUDViewModel: ObservableObject {
             }
         }
 
-        // 5. Cmd + C -> Copy Selected to clipboard
+        // 5. Cmd + C -> Copy Selected with animated feedback
         if modifiers == .command && event.keyCode == 8 { // C
             if let item = currentSelectedItem {
-                watcher?.copyToClipboard(content: item.rawContent)
-                PanelManager.shared.hidePanel()
+                copyWithAnimation(item: item)
                 return true
             }
         }
@@ -111,7 +126,9 @@ public final class HUDViewModel: ObservableObject {
         // 6. Cmd + P or Cmd + S -> Toggle Pin on selected item
         if modifiers == .command && (event.keyCode == 35 || event.keyCode == 1) { // P or S
             if let item = currentSelectedItem {
-                watcher?.togglePin(item: item)
+                withAnimation(.spring(response: 0.24, dampingFraction: 0.52)) {
+                    watcher?.togglePin(item: item)
+                }
                 return true
             }
         }
@@ -119,10 +136,12 @@ public final class HUDViewModel: ObservableObject {
         // 7. Cmd + Backspace -> Delete selected item
         if modifiers == .command && event.keyCode == 51 { // Delete
             if let item = currentSelectedItem {
-                watcher?.delete(item: item)
-                let items = filteredHistory
-                if selectedIndex >= items.count && selectedIndex > 0 {
-                    selectedIndex -= 1
+                withAnimation(.spring(response: 0.22, dampingFraction: 0.85)) {
+                    watcher?.delete(item: item)
+                    let items = filteredHistory
+                    if selectedIndex >= items.count && selectedIndex > 0 {
+                        selectedIndex -= 1
+                    }
                 }
                 return true
             }

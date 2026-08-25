@@ -29,8 +29,10 @@ public struct HistoryListView: View {
                             iconName: "tray.full",
                             isSelected: viewModel.selectedCategory == nil && !viewModel.isFilterPinnedOnly
                         ) {
-                            viewModel.isFilterPinnedOnly = false
-                            viewModel.selectedCategory = nil
+                            withAnimation(.spring(response: 0.22, dampingFraction: 0.85)) {
+                                viewModel.isFilterPinnedOnly = false
+                                viewModel.selectedCategory = nil
+                            }
                         }
 
                         CategoryPillView(
@@ -39,7 +41,9 @@ public struct HistoryListView: View {
                             isSelected: viewModel.isFilterPinnedOnly,
                             activeColor: .yellow
                         ) {
-                            viewModel.isFilterPinnedOnly.toggle()
+                            withAnimation(.spring(response: 0.22, dampingFraction: 0.85)) {
+                                viewModel.isFilterPinnedOnly.toggle()
+                            }
                         }
 
                         ForEach(viewModel.categoriesInHistory) { cat in
@@ -49,8 +53,10 @@ public struct HistoryListView: View {
                                 iconName: cat.systemImageName,
                                 isSelected: viewModel.selectedCategory == cat && !viewModel.isFilterPinnedOnly
                             ) {
-                                viewModel.isFilterPinnedOnly = false
-                                viewModel.selectedCategory = (viewModel.selectedCategory == cat) ? nil : cat
+                                withAnimation(.spring(response: 0.22, dampingFraction: 0.85)) {
+                                    viewModel.isFilterPinnedOnly = false
+                                    viewModel.selectedCategory = (viewModel.selectedCategory == cat) ? nil : cat
+                                }
                             }
                         }
                     }
@@ -82,14 +88,18 @@ public struct HistoryListView: View {
                                         item: item,
                                         isSelected: idx == viewModel.selectedIndex,
                                         onSelect: {
-                                            viewModel.selectedIndex = idx
+                                            withAnimation(.spring(response: 0.18, dampingFraction: 0.85)) {
+                                                viewModel.selectedIndex = idx
+                                            }
                                             onSelect(item)
                                         },
                                         onDoubleClick: {
                                             onDoubleClick(item)
                                         },
                                         onTogglePin: {
-                                            watcher.togglePin(item: item)
+                                            withAnimation(.spring(response: 0.24, dampingFraction: 0.52)) {
+                                                watcher.togglePin(item: item)
+                                            }
                                         }
                                     )
                                     .id(idx)
@@ -105,14 +115,18 @@ public struct HistoryListView: View {
                                         item: item,
                                         isSelected: idx == viewModel.selectedIndex,
                                         onSelect: {
-                                            viewModel.selectedIndex = idx
+                                            withAnimation(.spring(response: 0.18, dampingFraction: 0.85)) {
+                                                viewModel.selectedIndex = idx
+                                            }
                                             onSelect(item)
                                         },
                                         onDoubleClick: {
                                             onDoubleClick(item)
                                         },
                                         onTogglePin: {
-                                            watcher.togglePin(item: item)
+                                            withAnimation(.spring(response: 0.24, dampingFraction: 0.52)) {
+                                                watcher.togglePin(item: item)
+                                            }
                                         }
                                     )
                                     .id(idx)
@@ -123,7 +137,7 @@ public struct HistoryListView: View {
                         }
                     }
                     .onChange(of: viewModel.selectedIndex) { _, newIdx in
-                        withAnimation(.easeInOut(duration: 0.15)) {
+                        withAnimation(.spring(response: 0.2, dampingFraction: 0.85)) {
                             proxy.scrollTo(newIdx, anchor: .center)
                         }
                     }
@@ -153,6 +167,8 @@ struct CategoryPillView: View {
             .background(isSelected ? activeColor : Color.white.opacity(0.06))
             .foregroundColor(isSelected ? (activeColor == .yellow ? .black : .white) : .primary.opacity(0.8))
             .cornerRadius(6)
+            .scaleEffect(isSelected ? 1.03 : 1.0)
+            .animation(.spring(response: 0.2, dampingFraction: 0.8), value: isSelected)
         }
         .buttonStyle(.plain)
     }
@@ -212,6 +228,7 @@ struct ImageGridCell: View {
                         Image(systemName: "star.fill")
                             .font(.system(size: 7.5))
                             .foregroundColor(.yellow)
+                            .scaleEffect(1.1)
                     }
                 }
                 .padding(.horizontal, 4)
@@ -223,6 +240,8 @@ struct ImageGridCell: View {
                 RoundedRectangle(cornerRadius: 6)
                     .stroke(isSelected ? Color.white.opacity(0.9) : Color.white.opacity(0.12), lineWidth: isSelected ? 2 : 1)
             )
+            .scaleEffect(isSelected ? 1.02 : 1.0)
+            .animation(.spring(response: 0.18, dampingFraction: 0.85), value: isSelected)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -286,6 +305,7 @@ struct CompactHistoryRow: View {
                     Image(systemName: "star.fill")
                         .font(.system(size: 9))
                         .foregroundColor(.yellow)
+                        .scaleEffect(1.1)
                 }
             }
             .padding(.horizontal, 8)
@@ -298,6 +318,7 @@ struct CompactHistoryRow: View {
                 RoundedRectangle(cornerRadius: 6)
                     .stroke(isSelected ? Color.white.opacity(0.20) : Color.clear, lineWidth: 1)
             )
+            .animation(.spring(response: 0.18, dampingFraction: 0.85), value: isSelected)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
