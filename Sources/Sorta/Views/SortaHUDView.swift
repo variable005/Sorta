@@ -40,10 +40,10 @@ public struct SortaHUDView: View {
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 8)
-                    .background(Color.white.opacity(0.04))
+                    .background(Color.white.opacity(0.05))
 
                     Divider()
-                        .background(Color.white.opacity(0.08))
+                        .background(Color.white.opacity(0.10))
 
                     // History List
                     HistoryListView(
@@ -59,7 +59,7 @@ public struct SortaHUDView: View {
                     Spacer(minLength: 0)
 
                     Divider()
-                        .background(Color.white.opacity(0.08))
+                        .background(Color.white.opacity(0.10))
 
                     // Sidebar Footer
                     HStack {
@@ -80,16 +80,16 @@ public struct SortaHUDView: View {
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
-                    .background(Color.white.opacity(0.02))
+                    .background(Color.white.opacity(0.03))
                 }
                 .frame(width: 250)
                 .transition(.move(edge: .leading).combined(with: .opacity))
 
                 Divider()
-                    .background(Color.white.opacity(0.10))
+                    .background(Color.white.opacity(0.12))
             }
 
-            // MAIN AREA: Liquid Glass Content Viewer
+            // MAIN AREA: Real Translucent Liquid Glass Content Viewer
             VStack(spacing: 0) {
                 if let item = viewModel.currentSelectedItem {
                     // Liquid Glass Top Header Bar
@@ -102,13 +102,13 @@ public struct SortaHUDView: View {
                         }) {
                             Image(systemName: viewModel.isSidebarVisible ? "sidebar.left" : "clock.arrow.circlepath")
                                 .font(.system(size: 11))
-                                .foregroundColor(viewModel.isSidebarVisible ? .white : .secondary)
+                                .foregroundColor(viewModel.isSidebarVisible ? .white : .white.opacity(0.8))
                                 .frame(width: 26, height: 26)
                                 .background(
                                     LinearGradient(
                                         colors: [
-                                            Color.white.opacity(viewModel.isSidebarVisible ? 0.20 : 0.10),
-                                            Color.white.opacity(viewModel.isSidebarVisible ? 0.10 : 0.03)
+                                            Color.white.opacity(viewModel.isSidebarVisible ? 0.25 : 0.12),
+                                            Color.white.opacity(viewModel.isSidebarVisible ? 0.12 : 0.04)
                                         ],
                                         startPoint: .top,
                                         endPoint: .bottom
@@ -117,7 +117,7 @@ public struct SortaHUDView: View {
                                 .cornerRadius(6)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 6)
-                                        .stroke(Color.white.opacity(0.18), lineWidth: 0.8)
+                                        .stroke(Color.white.opacity(0.22), lineWidth: 0.8)
                                 )
                         }
                         .buttonStyle(.plain)
@@ -125,13 +125,13 @@ public struct SortaHUDView: View {
                         // Category Type Indicator (Liquid Glass Pill)
                         Image(systemName: item.category.systemImageName)
                             .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.85))
+                            .foregroundColor(.white.opacity(0.9))
                             .frame(width: 26, height: 26)
                             .background(
                                 LinearGradient(
                                     colors: [
-                                        Color.white.opacity(0.12),
-                                        Color.white.opacity(0.04)
+                                        Color.white.opacity(0.14),
+                                        Color.white.opacity(0.05)
                                     ],
                                     startPoint: .top,
                                     endPoint: .bottom
@@ -140,7 +140,7 @@ public struct SortaHUDView: View {
                             .cornerRadius(6)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 6)
-                                    .stroke(Color.white.opacity(0.16), lineWidth: 0.8)
+                                    .stroke(Color.white.opacity(0.20), lineWidth: 0.8)
                             )
 
                         Spacer(minLength: 12)
@@ -158,8 +158,8 @@ public struct SortaHUDView: View {
                                     .background(
                                         LinearGradient(
                                             colors: [
-                                                Color.white.opacity(viewModel.justCopied ? 0.25 : 0.14),
-                                                Color.white.opacity(viewModel.justCopied ? 0.12 : 0.05)
+                                                Color.white.opacity(viewModel.justCopied ? 0.30 : 0.15),
+                                                Color.white.opacity(viewModel.justCopied ? 0.15 : 0.06)
                                             ],
                                             startPoint: .top,
                                             endPoint: .bottom
@@ -168,7 +168,7 @@ public struct SortaHUDView: View {
                                     .cornerRadius(6)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 6)
-                                            .stroke(Color.white.opacity(viewModel.justCopied ? 0.35 : 0.20), lineWidth: 0.8)
+                                            .stroke(Color.white.opacity(viewModel.justCopied ? 0.40 : 0.22), lineWidth: 0.8)
                                     )
                                     .animation(.spring(response: 0.2, dampingFraction: 0.8), value: viewModel.justCopied)
                             }
@@ -187,14 +187,14 @@ public struct SortaHUDView: View {
                                         LinearGradient(
                                             colors: [
                                                 Color.white,
-                                                Color.white.opacity(0.92)
+                                                Color.white.opacity(0.90)
                                             ],
                                             startPoint: .top,
                                             endPoint: .bottom
                                         )
                                     )
                                     .cornerRadius(6)
-                                    .shadow(color: Color.white.opacity(0.20), radius: 4, x: 0, y: 1)
+                                    .shadow(color: Color.white.opacity(0.25), radius: 5, x: 0, y: 1)
                             }
                             .buttonStyle(.plain)
                         }
@@ -204,21 +204,12 @@ public struct SortaHUDView: View {
                     }
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
-                    .background(
-                        LinearGradient(
-                            colors: [
-                                Color.white.opacity(0.04),
-                                Color.clear
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
+                    .background(Color.white.opacity(0.02))
 
                     Divider()
                         .background(Color.white.opacity(0.08))
 
-                    // MAIN CONTENT VIEWPORT (Liquid Glass Inset Lens Card)
+                    // MAIN CONTENT VIEWPORT
                     VStack {
                         if item.isImage {
                             if imageHistory.count > 1 {
@@ -254,12 +245,12 @@ public struct SortaHUDView: View {
                                             .aspectRatio(contentMode: .fit)
                                             .frame(maxWidth: 360, maxHeight: 230)
                                             .cornerRadius(10)
-                                            .shadow(color: Color.black.opacity(0.55), radius: 16, x: 0, y: 8)
+                                            .shadow(color: Color.black.opacity(0.45), radius: 16, x: 0, y: 8)
                                             .overlay(
                                                 RoundedRectangle(cornerRadius: 10)
                                                     .stroke(
                                                         LinearGradient(
-                                                            colors: [Color.white.opacity(0.30), Color.white.opacity(0.06)],
+                                                            colors: [Color.white.opacity(0.35), Color.white.opacity(0.10)],
                                                             startPoint: .topLeading,
                                                             endPoint: .bottomTrailing
                                                         ),
@@ -276,7 +267,7 @@ public struct SortaHUDView: View {
                                             .padding(.vertical, 4)
                                             .background(
                                                 LinearGradient(
-                                                    colors: [Color.white.opacity(0.12), Color.white.opacity(0.04)],
+                                                    colors: [Color.white.opacity(0.14), Color.white.opacity(0.05)],
                                                     startPoint: .top,
                                                     endPoint: .bottom
                                                 )
@@ -284,7 +275,7 @@ public struct SortaHUDView: View {
                                             .cornerRadius(6)
                                             .overlay(
                                                 RoundedRectangle(cornerRadius: 6)
-                                                    .stroke(Color.white.opacity(0.15), lineWidth: 0.8)
+                                                    .stroke(Color.white.opacity(0.18), lineWidth: 0.8)
                                             )
                                             .fixedSize()
                                     }
@@ -298,7 +289,6 @@ public struct SortaHUDView: View {
                         }
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.black.opacity(0.20))
                     .id(item.id)
                     .transition(.opacity)
                     .animation(.easeInOut(duration: 0.12), value: item.id)
@@ -319,13 +309,13 @@ public struct SortaHUDView: View {
         .frame(width: viewModel.isSidebarVisible ? 720 : 580, height: 420)
         .background(
             ZStack {
-                VisualEffectBlur(material: .popover, blendingMode: .behindWindow)
-                // Liquid ambient luminance gradient
+                VisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow)
+                // Sheer liquid glass sheen
                 LinearGradient(
                     colors: [
-                        Color.white.opacity(0.07),
-                        Color.black.opacity(0.12),
-                        Color.black.opacity(0.45)
+                        Color.white.opacity(0.08),
+                        Color.white.opacity(0.02),
+                        Color.clear
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -338,9 +328,9 @@ public struct SortaHUDView: View {
                 .stroke(
                     LinearGradient(
                         colors: [
-                            Color.white.opacity(0.35),
-                            Color.white.opacity(0.12),
-                            Color.white.opacity(0.03)
+                            Color.white.opacity(0.42),
+                            Color.white.opacity(0.16),
+                            Color.white.opacity(0.05)
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -362,7 +352,7 @@ public struct SortaHUDView: View {
     }
 }
 
-/// Smart Text Card View with Liquid Glass Container
+/// Smart Text Card View with Translucent Liquid Glass Container
 struct SmartTextCardView: View {
     let item: ClipItem
     let watcher: PasteboardWatcher
@@ -388,7 +378,7 @@ struct SmartTextCardView: View {
     }
 }
 
-/// Standard Text Inset Card with Liquid Glass finish
+/// Standard Text Inset Card with Translucent Liquid Glass finish
 struct StandardTextCard: View {
     let rawContent: String
     let category: ClipCategory
@@ -401,7 +391,7 @@ struct StandardTextCard: View {
         ScrollView(.vertical, showsIndicators: true) {
             Text(rawContent)
                 .font(.system(size: isMonospaced ? 12.5 : 13.5, weight: .regular, design: isMonospaced ? .monospaced : .default))
-                .foregroundColor(Color.white.opacity(0.95))
+                .foregroundColor(Color.white)
                 .lineSpacing(isMonospaced ? 4 : 5)
                 .multilineTextAlignment(.leading)
                 .textSelection(.enabled)
@@ -411,9 +401,9 @@ struct StandardTextCard: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             ZStack {
-                Color.black.opacity(0.25)
+                Color.white.opacity(0.04)
                 LinearGradient(
-                    colors: [Color.white.opacity(0.04), Color.clear],
+                    colors: [Color.white.opacity(0.06), Color.clear],
                     startPoint: .top,
                     endPoint: .center
                 )
@@ -424,7 +414,7 @@ struct StandardTextCard: View {
             RoundedRectangle(cornerRadius: 10)
                 .stroke(
                     LinearGradient(
-                        colors: [Color.white.opacity(0.16), Color.white.opacity(0.04)],
+                        colors: [Color.white.opacity(0.18), Color.white.opacity(0.05)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
@@ -434,7 +424,7 @@ struct StandardTextCard: View {
     }
 }
 
-/// JSON Card (Liquid Glass with 2-space pretty printing)
+/// JSON Card (Translucent Liquid Glass with 2-space pretty printing)
 struct JSONDetailCard: View {
     let rawContent: String
 
@@ -453,7 +443,7 @@ struct JSONDetailCard: View {
         ScrollView([.vertical, .horizontal], showsIndicators: true) {
             Text(prettyJSON)
                 .font(.system(size: 12.5, weight: .regular, design: .monospaced))
-                .foregroundColor(Color.white.opacity(0.95))
+                .foregroundColor(Color.white)
                 .lineSpacing(4)
                 .multilineTextAlignment(.leading)
                 .textSelection(.enabled)
@@ -463,9 +453,9 @@ struct JSONDetailCard: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             ZStack {
-                Color.black.opacity(0.25)
+                Color.white.opacity(0.04)
                 LinearGradient(
-                    colors: [Color.white.opacity(0.04), Color.clear],
+                    colors: [Color.white.opacity(0.06), Color.clear],
                     startPoint: .top,
                     endPoint: .center
                 )
@@ -476,7 +466,7 @@ struct JSONDetailCard: View {
             RoundedRectangle(cornerRadius: 10)
                 .stroke(
                     LinearGradient(
-                        colors: [Color.white.opacity(0.16), Color.white.opacity(0.04)],
+                        colors: [Color.white.opacity(0.18), Color.white.opacity(0.05)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
@@ -511,13 +501,13 @@ struct JWTDetailCard: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Decoded Claims")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.white.opacity(0.75))
                     .padding(.horizontal, 4)
 
                 ScrollView([.vertical, .horizontal], showsIndicators: true) {
                     Text(payload)
                         .font(.system(size: 12.5, weight: .regular, design: .monospaced))
-                        .foregroundColor(Color.white.opacity(0.95))
+                        .foregroundColor(Color.white)
                         .lineSpacing(4)
                         .textSelection(.enabled)
                         .padding(14)
@@ -526,9 +516,9 @@ struct JWTDetailCard: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(
                     ZStack {
-                        Color.black.opacity(0.25)
+                        Color.white.opacity(0.04)
                         LinearGradient(
-                            colors: [Color.white.opacity(0.04), Color.clear],
+                            colors: [Color.white.opacity(0.06), Color.clear],
                             startPoint: .top,
                             endPoint: .center
                         )
@@ -539,7 +529,7 @@ struct JWTDetailCard: View {
                     RoundedRectangle(cornerRadius: 10)
                         .stroke(
                             LinearGradient(
-                                colors: [Color.white.opacity(0.16), Color.white.opacity(0.04)],
+                                colors: [Color.white.opacity(0.18), Color.white.opacity(0.05)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
@@ -584,14 +574,14 @@ struct ColorDetailCard: View {
                         RoundedRectangle(cornerRadius: 12)
                             .stroke(
                                 LinearGradient(
-                                    colors: [Color.white.opacity(0.40), Color.white.opacity(0.10)],
+                                    colors: [Color.white.opacity(0.45), Color.white.opacity(0.15)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ),
                                 lineWidth: 1.2
                             )
                     )
-                    .shadow(color: Color.black.opacity(0.45), radius: 12, x: 0, y: 6)
+                    .shadow(color: Color.black.opacity(0.35), radius: 12, x: 0, y: 6)
 
                 VStack(spacing: 8) {
                     ColorCardRow(label: "HEX", value: col.hex) { watcher.copyToClipboard(content: col.hex) }
@@ -606,9 +596,9 @@ struct ColorDetailCard: View {
             .padding(16)
             .background(
                 ZStack {
-                    Color.black.opacity(0.25)
+                    Color.white.opacity(0.04)
                     LinearGradient(
-                        colors: [Color.white.opacity(0.04), Color.clear],
+                        colors: [Color.white.opacity(0.06), Color.clear],
                         startPoint: .top,
                         endPoint: .center
                     )
@@ -619,7 +609,7 @@ struct ColorDetailCard: View {
                 RoundedRectangle(cornerRadius: 10)
                     .stroke(
                         LinearGradient(
-                            colors: [Color.white.opacity(0.16), Color.white.opacity(0.04)],
+                            colors: [Color.white.opacity(0.18), Color.white.opacity(0.05)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
@@ -641,7 +631,7 @@ struct ColorCardRow: View {
         HStack {
             Text(label)
                 .font(.system(size: 11, weight: .bold, design: .monospaced))
-                .foregroundColor(.secondary)
+                .foregroundColor(.white.opacity(0.75))
                 .frame(width: 55, alignment: .leading)
 
             Text(value)
@@ -654,16 +644,16 @@ struct ColorCardRow: View {
             Button(action: onCopy) {
                 Image(systemName: "doc.on.doc")
                     .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.white.opacity(0.8))
                     .padding(4)
-                    .background(Color.white.opacity(0.08))
+                    .background(Color.white.opacity(0.10))
                     .cornerRadius(4)
             }
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(Color.white.opacity(0.04))
+        .background(Color.white.opacity(0.06))
         .cornerRadius(6)
     }
 }
@@ -687,7 +677,7 @@ struct TimestampDetailCard: View {
             VStack(spacing: 14) {
                 Image(systemName: "calendar.badge.clock")
                     .font(.system(size: 30))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.white.opacity(0.8))
 
                 VStack(spacing: 5) {
                     Text(formattedDate(date))
@@ -696,24 +686,24 @@ struct TimestampDetailCard: View {
 
                     Text(formattedTime(date))
                         .font(.system(size: 13, design: .monospaced))
-                        .foregroundColor(.white.opacity(0.85))
+                        .foregroundColor(.white.opacity(0.90))
                 }
 
                 HStack(spacing: 8) {
                     Text("Relative: \(relativeTime(date))")
                         .font(.system(size: 10))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.white.opacity(0.75))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(Color.white.opacity(0.06))
+                        .background(Color.white.opacity(0.08))
                         .cornerRadius(6)
 
                     Text("Epoch: \(Int(date.timeIntervalSince1970))")
                         .font(.system(size: 10, design: .monospaced))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.white.opacity(0.75))
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(Color.white.opacity(0.06))
+                        .background(Color.white.opacity(0.08))
                         .cornerRadius(6)
                 }
             }
@@ -721,9 +711,9 @@ struct TimestampDetailCard: View {
             .padding(16)
             .background(
                 ZStack {
-                    Color.black.opacity(0.25)
+                    Color.white.opacity(0.04)
                     LinearGradient(
-                        colors: [Color.white.opacity(0.04), Color.clear],
+                        colors: [Color.white.opacity(0.06), Color.clear],
                         startPoint: .top,
                         endPoint: .center
                     )
@@ -734,7 +724,7 @@ struct TimestampDetailCard: View {
                 RoundedRectangle(cornerRadius: 10)
                     .stroke(
                         LinearGradient(
-                            colors: [Color.white.opacity(0.16), Color.white.opacity(0.04)],
+                            colors: [Color.white.opacity(0.18), Color.white.opacity(0.05)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
@@ -783,7 +773,7 @@ struct URLDetailCard: View {
                     .textSelection(.enabled)
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.white.opacity(0.04))
+                    .background(Color.white.opacity(0.06))
                     .cornerRadius(8)
 
                 if let comps = urlComponents {
@@ -791,19 +781,19 @@ struct URLDetailCard: View {
                         if let host = comps.host {
                             Text("Host: \(host)")
                                 .font(.system(size: 10, weight: .bold))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.white.opacity(0.85))
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(Color.white.opacity(0.06))
+                                .background(Color.white.opacity(0.08))
                                 .cornerRadius(6)
                         }
                         if !comps.path.isEmpty && comps.path != "/" {
                             Text("Path: \(comps.path)")
                                 .font(.system(size: 10))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.white.opacity(0.85))
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(Color.white.opacity(0.06))
+                                .background(Color.white.opacity(0.08))
                                 .cornerRadius(6)
                         }
                     }
@@ -812,19 +802,19 @@ struct URLDetailCard: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Query Parameters (\(queryItems.count))")
                                 .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.white.opacity(0.85))
 
                             VStack(spacing: 3) {
                                 ForEach(queryItems, id: \.name) { q in
                                     HStack {
                                         Text(q.name)
                                             .font(.system(size: 11, weight: .bold, design: .monospaced))
-                                            .foregroundColor(.white.opacity(0.8))
+                                            .foregroundColor(.white.opacity(0.9))
                                             .frame(minWidth: 70, alignment: .leading)
 
                                         Text(q.value ?? "")
                                             .font(.system(size: 11, design: .monospaced))
-                                            .foregroundColor(.secondary)
+                                            .foregroundColor(.white.opacity(0.7))
                                             .lineLimit(1)
                                             .truncationMode(.middle)
 
@@ -832,7 +822,7 @@ struct URLDetailCard: View {
                                     }
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
-                                    .background(Color.white.opacity(0.03))
+                                    .background(Color.white.opacity(0.04))
                                     .cornerRadius(5)
                                 }
                             }
@@ -847,9 +837,9 @@ struct URLDetailCard: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
             ZStack {
-                Color.black.opacity(0.25)
+                Color.white.opacity(0.04)
                 LinearGradient(
-                    colors: [Color.white.opacity(0.04), Color.clear],
+                    colors: [Color.white.opacity(0.06), Color.clear],
                     startPoint: .top,
                     endPoint: .center
                 )
@@ -860,7 +850,7 @@ struct URLDetailCard: View {
             RoundedRectangle(cornerRadius: 10)
                 .stroke(
                     LinearGradient(
-                        colors: [Color.white.opacity(0.16), Color.white.opacity(0.04)],
+                        colors: [Color.white.opacity(0.18), Color.white.opacity(0.05)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
@@ -870,7 +860,7 @@ struct URLDetailCard: View {
     }
 }
 
-/// Modern Image Grid Card with Liquid Glass framing
+/// Modern Image Grid Card with Translucent Liquid Glass framing
 struct ImageGridCard: View {
     let item: ClipItem
     let isSelected: Bool
@@ -925,7 +915,7 @@ struct ImageGridCard: View {
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
                     .stroke(
-                        isSelected ? Color.white : Color.white.opacity(0.15),
+                        isSelected ? Color.white : Color.white.opacity(0.20),
                         lineWidth: isSelected ? 2 : 1
                     )
             )
@@ -950,6 +940,7 @@ struct VisualEffectBlur: NSViewRepresentable {
         visualEffectView.material = material
         visualEffectView.blendingMode = blendingMode
         visualEffectView.state = .active
+        visualEffectView.wantsLayer = true
         return visualEffectView
     }
 
