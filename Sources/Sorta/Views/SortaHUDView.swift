@@ -71,7 +71,7 @@ public struct SortaHUDView: View {
 
                         if !watcher.history.isEmpty {
                             Button("Clear") {
-                                watcher.clearHistory(preservePinned: true)
+                                watcher.clearHistory()
                             }
                             .buttonStyle(.plain)
                             .font(.system(size: 10))
@@ -92,107 +92,60 @@ public struct SortaHUDView: View {
             // MAIN AREA: Ultra-Minimal Content Viewer
             VStack(spacing: 0) {
                 if let item = viewModel.currentSelectedItem {
-                    // Minimal Top Header Bar
-                    HStack(spacing: 8) {
-                        // Toggle Sidebar Button
+                    // Minimal Top Header Bar (Symbol-only controls)
+                    HStack(spacing: 6) {
+                        // Toggle Sidebar Button (Symbol only)
                         Button(action: {
                             withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
                                 viewModel.isSidebarVisible.toggle()
                             }
                         }) {
-                            HStack(spacing: 4) {
-                                Image(systemName: viewModel.isSidebarVisible ? "sidebar.left" : "clock.arrow.circlepath")
-                                    .font(.system(size: 11))
-                                if !viewModel.isSidebarVisible && viewModel.isHovering {
-                                    Text("History")
-                                        .font(.system(size: 11, weight: .medium))
-                                        .lineLimit(1)
-                                }
-                            }
-                            .foregroundColor(viewModel.isSidebarVisible ? .primary : .secondary)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 4)
-                            .background(Color.white.opacity(viewModel.isSidebarVisible ? 0.12 : (viewModel.isHovering ? 0.08 : 0.0)))
-                            .cornerRadius(5)
+                            Image(systemName: viewModel.isSidebarVisible ? "sidebar.left" : "clock.arrow.circlepath")
+                                .font(.system(size: 11))
+                                .foregroundColor(viewModel.isSidebarVisible ? .primary : .secondary)
+                                .frame(width: 24, height: 24)
+                                .background(Color.white.opacity(viewModel.isSidebarVisible ? 0.12 : (viewModel.isHovering ? 0.08 : 0.0)))
+                                .cornerRadius(5)
                         }
                         .buttonStyle(.plain)
-                        .fixedSize()
 
-                        // Category Badge
-                        HStack(spacing: 5) {
-                            Image(systemName: item.category.systemImageName)
-                                .foregroundColor(.secondary)
-                                .font(.system(size: 11, weight: .semibold))
-
-                            Text(item.isImage ? "Images (\(imageHistory.count))" : item.category.rawValue)
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundColor(.primary)
-                                .lineLimit(1)
-                        }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3.5)
-                        .background(Color.white.opacity(0.08))
-                        .cornerRadius(6)
-                        .fixedSize()
+                        // Category Type Indicator (Symbol only)
+                        Image(systemName: item.category.systemImageName)
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundColor(.secondary)
+                            .frame(width: 24, height: 24)
+                            .background(Color.white.opacity(0.06))
+                            .cornerRadius(5)
 
                         Spacer(minLength: 12)
 
-                        // Action Buttons (Reveals on Hover, Spring-interactive)
+                        // Action Buttons (Symbols only, reveals on hover)
                         HStack(spacing: 6) {
-                            // Star / Pin (Apple Spring Bounce)
-                            Button(action: {
-                                withAnimation(.spring(response: 0.24, dampingFraction: 0.52)) {
-                                    watcher.togglePin(item: item)
-                                }
-                            }) {
-                                Image(systemName: item.isPinned ? "star.fill" : "star")
-                                    .font(.system(size: 11))
-                                    .foregroundColor(item.isPinned ? .yellow : .secondary)
-                                    .scaleEffect(item.isPinned ? 1.20 : 1.0)
-                                    .animation(.spring(response: 0.24, dampingFraction: 0.52), value: item.isPinned)
-                                    .frame(width: 24, height: 24)
-                                    .background(Color.white.opacity(0.08))
-                                    .cornerRadius(5)
-                            }
-                            .buttonStyle(.plain)
-
-                            // Copy (Morphs to Checkmark on Copy)
+                            // Copy Symbol Button
                             Button(action: {
                                 viewModel.copyWithAnimation(item: item)
                             }) {
-                                HStack(spacing: 4) {
-                                    Image(systemName: viewModel.justCopied ? "checkmark" : "doc.on.doc")
-                                        .font(.system(size: 10, weight: viewModel.justCopied ? .bold : .regular))
-                                    Text(viewModel.justCopied ? "Copied" : "Copy")
-                                        .font(.system(size: 11, weight: .medium))
-                                        .lineLimit(1)
-                                }
-                                .foregroundColor(viewModel.justCopied ? .green : .primary)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(Color.white.opacity(viewModel.justCopied ? 0.16 : 0.08))
-                                .cornerRadius(5)
-                                .animation(.spring(response: 0.2, dampingFraction: 0.8), value: viewModel.justCopied)
+                                Image(systemName: viewModel.justCopied ? "checkmark" : "doc.on.doc")
+                                    .font(.system(size: 11, weight: viewModel.justCopied ? .bold : .regular))
+                                    .foregroundColor(viewModel.justCopied ? .green : .primary)
+                                    .frame(width: 24, height: 24)
+                                    .background(Color.white.opacity(viewModel.justCopied ? 0.16 : 0.08))
+                                    .cornerRadius(5)
+                                    .animation(.spring(response: 0.2, dampingFraction: 0.8), value: viewModel.justCopied)
                             }
                             .buttonStyle(.plain)
 
-                            // Paste
+                            // Paste Symbol Button
                             Button(action: {
                                 watcher.pasteRawItem(item)
                                 PanelManager.shared.hidePanel()
                             }) {
-                                HStack(spacing: 4) {
-                                    Image(systemName: "return")
-                                        .font(.system(size: 10, weight: .bold))
-                                    Text("Paste")
-                                        .font(.system(size: 11, weight: .bold))
-                                        .lineLimit(1)
-                                }
-                                .foregroundColor(.black)
-                                .padding(.horizontal, 9)
-                                .padding(.vertical, 4)
-                                .background(Color.white)
-                                .cornerRadius(5)
+                                Image(systemName: "return")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(.black)
+                                    .frame(width: 24, height: 24)
+                                    .background(Color.white)
+                                    .cornerRadius(5)
                             }
                             .buttonStyle(.plain)
                         }
@@ -200,8 +153,8 @@ public struct SortaHUDView: View {
                         .opacity(viewModel.isHovering ? 1.0 : 0.0)
                         .animation(.spring(response: 0.2, dampingFraction: 0.85), value: viewModel.isHovering)
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
                     .background(Color.white.opacity(0.02))
 
                     Divider()
@@ -228,11 +181,6 @@ public struct SortaHUDView: View {
                                                 onDoubleClick: {
                                                     watcher.pasteRawItem(imgItem)
                                                     PanelManager.shared.hidePanel()
-                                                },
-                                                onTogglePin: {
-                                                    withAnimation(.spring(response: 0.24, dampingFraction: 0.52)) {
-                                                        watcher.togglePin(item: imgItem)
-                                                    }
                                                 }
                                             )
                                         }
@@ -729,7 +677,6 @@ struct ImageGridCard: View {
     let isSelected: Bool
     let onSelect: () -> Void
     let onDoubleClick: () -> Void
-    let onTogglePin: () -> Void
 
     var body: some View {
         Button(action: onSelect) {
@@ -769,15 +716,7 @@ struct ImageGridCard: View {
                             .foregroundColor(.white)
                             .lineLimit(1)
                     }
-
                     Spacer()
-
-                    if item.isPinned {
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 8.5))
-                            .foregroundColor(.yellow)
-                            .scaleEffect(1.1)
-                    }
                 }
                 .padding(.horizontal, 8)
                 .padding(.bottom, 6)

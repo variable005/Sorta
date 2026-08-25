@@ -25,36 +25,22 @@ public struct HistoryListView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 5) {
                         CategoryPillView(
-                            title: "All (\(watcher.history.count))",
+                            title: "All",
                             iconName: "tray.full",
-                            isSelected: viewModel.selectedCategory == nil && !viewModel.isFilterPinnedOnly
+                            isSelected: viewModel.selectedCategory == nil
                         ) {
                             withAnimation(.spring(response: 0.22, dampingFraction: 0.85)) {
-                                viewModel.isFilterPinnedOnly = false
                                 viewModel.selectedCategory = nil
                             }
                         }
 
-                        CategoryPillView(
-                            title: "Pinned (\(watcher.pinnedItems.count))",
-                            iconName: "star.fill",
-                            isSelected: viewModel.isFilterPinnedOnly,
-                            activeColor: .yellow
-                        ) {
-                            withAnimation(.spring(response: 0.22, dampingFraction: 0.85)) {
-                                viewModel.isFilterPinnedOnly.toggle()
-                            }
-                        }
-
                         ForEach(viewModel.categoriesInHistory) { cat in
-                            let count = watcher.history.filter { $0.category == cat }.count
                             CategoryPillView(
-                                title: "\(cat.rawValue) (\(count))",
+                                title: cat.rawValue,
                                 iconName: cat.systemImageName,
-                                isSelected: viewModel.selectedCategory == cat && !viewModel.isFilterPinnedOnly
+                                isSelected: viewModel.selectedCategory == cat
                             ) {
                                 withAnimation(.spring(response: 0.22, dampingFraction: 0.85)) {
-                                    viewModel.isFilterPinnedOnly = false
                                     viewModel.selectedCategory = (viewModel.selectedCategory == cat) ? nil : cat
                                 }
                             }
@@ -95,11 +81,6 @@ public struct HistoryListView: View {
                                         },
                                         onDoubleClick: {
                                             onDoubleClick(item)
-                                        },
-                                        onTogglePin: {
-                                            withAnimation(.spring(response: 0.24, dampingFraction: 0.52)) {
-                                                watcher.togglePin(item: item)
-                                            }
                                         }
                                     )
                                     .id(idx)
@@ -122,11 +103,6 @@ public struct HistoryListView: View {
                                         },
                                         onDoubleClick: {
                                             onDoubleClick(item)
-                                        },
-                                        onTogglePin: {
-                                            withAnimation(.spring(response: 0.24, dampingFraction: 0.52)) {
-                                                watcher.togglePin(item: item)
-                                            }
                                         }
                                     )
                                     .id(idx)
@@ -151,21 +127,20 @@ struct CategoryPillView: View {
     let title: String
     let iconName: String
     let isSelected: Bool
-    var activeColor: Color = Color.white.opacity(0.22)
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 4) {
                 Image(systemName: iconName)
-                    .font(.system(size: 8))
+                    .font(.system(size: 9))
                 Text(title)
                     .font(.system(size: 10, weight: isSelected ? .bold : .medium))
             }
             .padding(.horizontal, 7)
             .padding(.vertical, 3)
-            .background(isSelected ? activeColor : Color.white.opacity(0.06))
-            .foregroundColor(isSelected ? (activeColor == .yellow ? .black : .white) : .primary.opacity(0.8))
+            .background(isSelected ? Color.white.opacity(0.20) : Color.white.opacity(0.06))
+            .foregroundColor(isSelected ? .white : .primary.opacity(0.8))
             .cornerRadius(6)
             .scaleEffect(isSelected ? 1.03 : 1.0)
             .animation(.spring(response: 0.2, dampingFraction: 0.8), value: isSelected)
@@ -179,7 +154,6 @@ struct ImageGridCell: View {
     let isSelected: Bool
     let onSelect: () -> Void
     let onDoubleClick: () -> Void
-    let onTogglePin: () -> Void
 
     var body: some View {
         Button(action: onSelect) {
@@ -221,15 +195,7 @@ struct ImageGridCell: View {
                             .foregroundColor(.white.opacity(0.9))
                             .lineLimit(1)
                     }
-
                     Spacer()
-
-                    if item.isPinned {
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 7.5))
-                            .foregroundColor(.yellow)
-                            .scaleEffect(1.1)
-                    }
                 }
                 .padding(.horizontal, 4)
                 .padding(.bottom, 3)
@@ -256,7 +222,6 @@ struct CompactHistoryRow: View {
     let isSelected: Bool
     let onSelect: () -> Void
     let onDoubleClick: () -> Void
-    let onTogglePin: () -> Void
 
     var body: some View {
         Button(action: onSelect) {
@@ -300,13 +265,6 @@ struct CompactHistoryRow: View {
                 }
 
                 Spacer()
-
-                if item.isPinned {
-                    Image(systemName: "star.fill")
-                        .font(.system(size: 9))
-                        .foregroundColor(.yellow)
-                        .scaleEffect(1.1)
-                }
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
