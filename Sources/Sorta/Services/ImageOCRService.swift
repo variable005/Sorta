@@ -29,7 +29,8 @@ public enum ImageOCRService {
             }
 
             request.recognitionLevel = .accurate
-            request.usesLanguageCorrection = true
+            request.usesLanguageCorrection = false // Preserves exact serial numbers, barcodes, code names
+            request.recognitionLanguages = ["en-US"]
 
             let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
             try? handler.perform([request])

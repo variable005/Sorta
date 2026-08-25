@@ -235,12 +235,21 @@ public struct SortaHUDView: View {
                                     }
                                     .padding(16)
                                 } else {
-                                    // Aspect-Fitted Draggable Image with Auto Decoded Barcode beneath
+                                    // Aspect-Fitted Draggable Image with Auto-written Decoded Text beneath
+                                    let autoDetectedText: (text: String, icon: String)? = {
+                                        if let barcode = item.decodedBarcode, !barcode.isEmpty {
+                                            return (barcode, barcode.hasPrefix("http") ? "link" : "barcode")
+                                        } else if let ocr = item.extractedText, !ocr.isEmpty {
+                                            return (ocr, "text.viewfinder")
+                                        }
+                                        return nil
+                                    }()
+
                                     VStack(spacing: 10) {
                                         ZStack(alignment: .bottomTrailing) {
                                             NativeDraggableImageView(item: item, image: nsImage, cornerRadius: 8)
                                                 .aspectRatio(nsImage.size.width / max(nsImage.size.height, 1), contentMode: .fit)
-                                                .frame(maxWidth: 510, maxHeight: item.decodedBarcode != nil ? 250 : 330)
+                                                .frame(maxWidth: 510, maxHeight: autoDetectedText != nil ? 245 : 330)
                                                 .clipShape(RoundedRectangle(cornerRadius: 8))
                                                 .overlay(
                                                     RoundedRectangle(cornerRadius: 8)
@@ -282,24 +291,31 @@ public struct SortaHUDView: View {
                                             }
                                         }
 
-                                        // Auto-written Decoded Barcode / QR payload beneath the image
-                                        if let barcode = item.decodedBarcode, !barcode.isEmpty {
+                                        // Auto-written Decoded Barcode / OCR text directly beneath the image
+                                        if let detected = autoDetectedText {
                                             HStack(spacing: 8) {
-                                                Image(systemName: barcode.hasPrefix("http") ? "link" : "barcode")
+                                                Image(systemName: detected.icon)
                                                     .font(.system(size: 11))
                                                     .foregroundColor(.secondary)
 
-                                                Text(barcode)
-                                                    .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                                Text(detected.text)
+                                                    .font(.system(size: 12.5, weight: .medium, design: .monospaced))
                                                     .foregroundColor(.primary)
-                                                    .lineLimit(1)
+                                                    .lineLimit(2)
                                                     .truncationMode(.middle)
                                                     .textSelection(.enabled)
 
                                                 Spacer()
 
                                                 Button(action: {
-                                                    viewModel.copyBarcodePayload(item: item)
+                                                    watcher.copyToClipboard(content: detected.text)
+                                                    withAnimation(.spring(response: 0.22, dampingFraction: 0.75)) {
+                                                        viewModel.justCopied = true
+                                                    }
+                                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) {
+                                                        PanelManager.shared.hidePanel()
+                                                        viewModel.justCopied = false
+                                                    }
                                                 }) {
                                                     HStack(spacing: 4) {
                                                         Image(systemName: "doc.on.doc")
