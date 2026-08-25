@@ -2,6 +2,8 @@ import AppKit
 import SwiftUI
 
 public final class HUDPanel: NSPanel {
+    public static var isDraggingActive: Bool = false
+
     public init(contentRect: NSRect) {
         super.init(
             contentRect: contentRect,
@@ -14,7 +16,7 @@ public final class HUDPanel: NSPanel {
         self.isOpaque = false
         self.backgroundColor = .clear
         self.hasShadow = true
-        self.isMovableByWindowBackground = true
+        self.isMovableByWindowBackground = false
         self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
     }
 
@@ -32,7 +34,8 @@ public final class HUDPanel: NSPanel {
 
     public override func resignKey() {
         super.resignKey()
-        // Auto-close HUD when clicking outside/losing focus
+        // Do not close panel if user is actively dragging an item out of the panel!
+        guard !HUDPanel.isDraggingActive else { return }
         PanelManager.shared.hidePanel()
     }
 }

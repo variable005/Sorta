@@ -182,22 +182,15 @@ public struct SortaHUDView: View {
                                     .padding(16)
                                 }
                             } else {
-                                // Single image preview (Draggable)
+                                // Single image preview (Native Draggable)
                                 VStack(spacing: 14) {
-                                    if let data = item.imageData, let nsImage = NSImage(data: data) {
-                                        Image(nsImage: nsImage)
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fit)
-                                            .frame(maxWidth: 380, maxHeight: 250)
-                                            .cornerRadius(8)
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 8)
-                                                    .stroke(Color.white.opacity(0.15), lineWidth: 1)
-                                            )
-                                            .onDrag {
-                                                DragItemProviderHelper.createImageItemProvider(item: item)
-                                            }
-                                    }
+                                    DraggableImageView(item: item, cornerRadius: 8)
+                                        .frame(maxWidth: 400, maxHeight: 260)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                                        )
+                                        .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 5)
 
                                     if let dims = item.imageDimensions {
                                         Text(dims)
@@ -655,26 +648,8 @@ struct ImageGridCard: View {
     var body: some View {
         Button(action: onSelect) {
             ZStack(alignment: .bottomLeading) {
-                if let data = item.imageData, let img = NSImage(data: data) {
-                    Color.clear
-                        .frame(height: 120)
-                        .overlay(
-                            Image(nsImage: img)
-                                .resizable()
-                                .scaledToFill()
-                        )
-                        .clipped()
-                        .background(Color.white.opacity(0.04))
-                } else {
-                    Rectangle()
-                        .fill(Color.white.opacity(0.04))
-                        .frame(height: 120)
-                        .overlay(
-                            Image(systemName: "photo")
-                                .font(.system(size: 24))
-                                .foregroundColor(.secondary)
-                        )
-                }
+                DraggableImageView(item: item, cornerRadius: 8)
+                    .frame(height: 120)
 
                 LinearGradient(
                     colors: [Color.clear, Color.black.opacity(0.75)],
@@ -712,9 +687,86 @@ struct ImageGridCard: View {
         .simultaneousGesture(TapGesture(count: 2).onEnded {
             onDoubleClick()
         })
-        .onDrag {
-            DragItemProviderHelper.createImageItemProvider(item: item)
+    }
+}
+
+/// Native AppKit Draggable Image View wrapping NSImageView with NSDraggingSource
+public struct DraggableImageView: NSViewRepresentable {
+    public let item: ClipItem
+    public var cornerRadius: CGFloat = 8
+
+    public init(item: ClipItem, cornerRadius: CGFloat = 8) {
+        self.item = item
+        self.cornerRadius = cornerRadius
+    }
+
+    public func makeNSView(context: Context) -> DraggableNSImageView {
+        let view = DraggableNSImageView()
+        view.imageScaling = .scaleProportionallyUpOrDown
+        view.clipItem = item
+        view.wantsLayer = true
+        view.layer?.cornerRadius = cornerRadius
+        view.layer?.masksToBounds = true
+        if let data = item.imageData, let img = NSImage(data: data) {
+            view.image = img
         }
+        return view
+    }
+
+    public func updateNSView(_ nsView: DraggableNSImageView, context: Context) {
+        nsView.clipItem = item
+        nsView.layer?.cornerRadius = cornerRadius
+        if let data = item.imageData, let img = NSImage(data: data) {
+            nsView.image = img
+        }
+    }
+}
+
+public final class DraggableNSImageView: NSImageView, NSDraggingSource {
+    public var clipItem: ClipItem?
+
+    public func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
+        return .copy
+    }
+
+    public func draggingSession(_ session: NSDraggingSession, willBeginAt screenPoint: NSPoint) {
+        HUDPanel.isDraggingActive = true
+    }
+
+    public func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
+        HUDPanel.isDraggingActive = false
+        if operation != [] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                PanelManager.shared.hidePanel()
+            }
+        }
+    }
+
+    public override func mouseDragged(with event: NSEvent) {
+        guard let item = clipItem, let data = item.imageData, let image = NSImage(data: data) else {
+            super.mouseDragged(with: event)
+            return
+        }
+
+        // 1. Write image to disk temporary file URL for Finder / Desktop / File dialogs
+        let tempDir = FileManager.default.temporaryDirectory
+        let fileName = "Sorta_\(item.id.uuidString.prefix(8)).png"
+        let fileURL = tempDir.appendingPathComponent(fileName)
+        try? data.write(to: fileURL)
+
+        // 2. Prepare pasteboard items with file URL, public.png, and TIFF
+        let pbItem = NSPasteboardItem()
+        pbItem.setString(fileURL.absoluteString, forType: .fileURL)
+        pbItem.setData(data, forType: NSPasteboard.PasteboardType("public.png"))
+        if let tiff = image.tiffRepresentation {
+            pbItem.setData(tiff, forType: .tiff)
+        }
+
+        let draggingItem = NSDraggingItem(pasteboardWriter: pbItem)
+        let dragFrame = bounds
+        draggingItem.setDraggingFrame(dragFrame, contents: image)
+
+        beginDraggingSession(with: [draggingItem], event: event, source: self)
     }
 }
 
