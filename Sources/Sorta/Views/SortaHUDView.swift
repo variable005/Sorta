@@ -235,49 +235,20 @@ public struct SortaHUDView: View {
                                     }
                                     .padding(16)
                                 } else {
-                                    // Aspect-Fitted Draggable Image on Liquid Glass
-                                    ZStack(alignment: .bottomTrailing) {
-                                        NativeDraggableImageView(item: item, image: nsImage, cornerRadius: 8)
-                                            .aspectRatio(nsImage.size.width / max(nsImage.size.height, 1), contentMode: .fit)
-                                            .frame(maxWidth: 510, maxHeight: 330)
-                                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                                            .overlay(
-                                                RoundedRectangle(cornerRadius: 8)
-                                                    .stroke(Color.white.opacity(0.15), lineWidth: 1)
-                                            )
-                                            .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 5)
+                                    // Aspect-Fitted Draggable Image with Auto Decoded Barcode beneath
+                                    VStack(spacing: 10) {
+                                        ZStack(alignment: .bottomTrailing) {
+                                            NativeDraggableImageView(item: item, image: nsImage, cornerRadius: 8)
+                                                .aspectRatio(nsImage.size.width / max(nsImage.size.height, 1), contentMode: .fit)
+                                                .frame(maxWidth: 510, maxHeight: item.decodedBarcode != nil ? 250 : 330)
+                                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 8)
+                                                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                                                )
+                                                .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 5)
 
-                                        // Floating QR Code / Live Text Pill Bar
-                                        HStack(spacing: 6) {
-                                            if let barcode = item.decodedBarcode, !barcode.isEmpty {
-                                                Button(action: {
-                                                    viewModel.copyBarcodePayload(item: item)
-                                                }) {
-                                                    HStack(spacing: 4) {
-                                                        Image(systemName: "qrcode")
-                                                            .font(.system(size: 9, weight: .bold))
-                                                        Text(barcode.hasPrefix("http") ? "Copy Link" : "Copy QR")
-                                                            .font(.system(size: 10, weight: .medium))
-                                                    }
-                                                    .foregroundColor(.white)
-                                                    .padding(.horizontal, 8)
-                                                    .padding(.vertical, 4)
-                                                    .background(
-                                                        LinearGradient(
-                                                            colors: [Color.black.opacity(0.80), Color.black.opacity(0.60)],
-                                                            startPoint: .top,
-                                                            endPoint: .bottom
-                                                        )
-                                                    )
-                                                    .cornerRadius(5)
-                                                    .overlay(
-                                                        RoundedRectangle(cornerRadius: 5)
-                                                            .stroke(Color.white.opacity(0.25), lineWidth: 0.8)
-                                                    )
-                                                }
-                                                .buttonStyle(.plain)
-                                            }
-
+                                            // Live Text Toggle Badge (if OCR text detected)
                                             if let ocrText = item.extractedText, !ocrText.isEmpty {
                                                 Button(action: {
                                                     withAnimation(.spring(response: 0.2, dampingFraction: 0.85)) {
@@ -307,9 +278,58 @@ public struct SortaHUDView: View {
                                                     )
                                                 }
                                                 .buttonStyle(.plain)
+                                                .padding(10)
                                             }
                                         }
-                                        .padding(10)
+
+                                        // Auto-written Decoded Barcode / QR payload beneath the image
+                                        if let barcode = item.decodedBarcode, !barcode.isEmpty {
+                                            HStack(spacing: 8) {
+                                                Image(systemName: barcode.hasPrefix("http") ? "link" : "barcode")
+                                                    .font(.system(size: 11))
+                                                    .foregroundColor(.secondary)
+
+                                                Text(barcode)
+                                                    .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                                    .foregroundColor(.primary)
+                                                    .lineLimit(1)
+                                                    .truncationMode(.middle)
+                                                    .textSelection(.enabled)
+
+                                                Spacer()
+
+                                                Button(action: {
+                                                    viewModel.copyBarcodePayload(item: item)
+                                                }) {
+                                                    HStack(spacing: 4) {
+                                                        Image(systemName: "doc.on.doc")
+                                                            .font(.system(size: 9))
+                                                        Text("Copy")
+                                                            .font(.system(size: 10, weight: .medium))
+                                                    }
+                                                    .foregroundColor(.white)
+                                                    .padding(.horizontal, 8)
+                                                    .padding(.vertical, 4)
+                                                    .background(Color.white.opacity(0.12))
+                                                    .cornerRadius(5)
+                                                    .overlay(
+                                                        RoundedRectangle(cornerRadius: 5)
+                                                            .stroke(Color.white.opacity(0.20), lineWidth: 0.8)
+                                                    )
+                                                }
+                                                .buttonStyle(.plain)
+                                            }
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 7)
+                                            .background(Color.white.opacity(0.06))
+                                            .cornerRadius(7)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 7)
+                                                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                                            )
+                                            .frame(maxWidth: 510)
+                                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                                        }
                                     }
                                     .padding(16)
                                 }
