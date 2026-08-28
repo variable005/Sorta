@@ -74,19 +74,6 @@ public struct EmptyPanelStateView: View {
                         .foregroundColor(.primary.opacity(0.85))
                 }
 
-                // Category / Tag Badge (Clean monochrome)
-                Text(emptyStateVM.currentMessage.badge.uppercased())
-                    .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
-                    .tracking(0.8)
-                    .foregroundColor(.secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(Color.white.opacity(0.05))
-                    .cornerRadius(6)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 6)
-                            .stroke(Color.white.opacity(0.09), lineWidth: 0.8)
-                    )
 
                 // Headline and Subtext
                 VStack(spacing: 5) {
