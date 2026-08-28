@@ -162,10 +162,6 @@ public struct EmptyPanelStateView: View {
 
             // Bottom Tip Bar
             HStack(spacing: 5) {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 10))
-                    .foregroundColor(.secondary.opacity(0.8))
-
                 Text("Tip: Press")
                     .font(.system(size: 11))
                     .foregroundColor(.secondary.opacity(0.8))
