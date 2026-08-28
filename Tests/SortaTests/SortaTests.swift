@@ -16,13 +16,13 @@ public struct SortaTestSuite {
             }
         }
 
-        // 1. LineSorter Test
-        let sorter = LineSorterTransformer()
-        let text = "item10\nitem2\nitem1\nitem2\nitem3"
-        assert(sorter.detect(content: text), "LineSorter should detect multiline text")
-        let sortOpts = sorter.transform(content: text)
-        let azOpt = sortOpts.first(where: { $0.title.contains("A-Z Natural") })
-        assert(azOpt?.transformedContent == "item1\nitem2\nitem2\nitem3\nitem10", "Natural sort order")
+        // 1. TextSanitizer Test
+        let sanitizer = TextSanitizerTransformer()
+        let text = "“Hello world”\u{200B}"
+        assert(sanitizer.detect(content: text), "TextSanitizer should detect text")
+        let cleanOpts = sanitizer.transform(content: text)
+        let sanitizeOpt = cleanOpts.first(where: { $0.title.contains("Sanitize") })
+        assert(sanitizeOpt?.transformedContent == "\"Hello world\"", "Sanitize quotes and zero-width spaces")
 
         // 2. URLCleaner Test
         let urlCleaner = URLCleanerTransformer()

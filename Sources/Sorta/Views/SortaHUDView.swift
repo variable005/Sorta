@@ -322,15 +322,7 @@ public struct SortaHUDView: View {
                     .transition(.opacity)
                     .animation(.easeInOut(duration: 0.12), value: item.id)
                 } else {
-                    VStack(spacing: 10) {
-                        Image(systemName: "doc.on.clipboard")
-                            .font(.system(size: 32))
-                            .foregroundColor(.secondary.opacity(0.5))
-                        Text("No clipboard content")
-                            .font(.system(size: 13))
-                            .foregroundColor(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    EmptyPanelStateView(viewModel: viewModel, watcher: watcher)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

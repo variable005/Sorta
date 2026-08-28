@@ -54,16 +54,7 @@ public struct HistoryListView: View {
 
             // Main List or Image Grid
             if viewModel.filteredHistory.isEmpty {
-                VStack(spacing: 8) {
-                    Image(systemName: "doc.on.clipboard")
-                        .font(.system(size: 24))
-                        .foregroundColor(.secondary.opacity(0.6))
-                    Text(watcher.history.isEmpty ? "No clipboard history yet" : "No matching items")
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.vertical, 30)
+                CompactEmptyStateView(viewModel: viewModel, watcher: watcher)
             } else {
                 ScrollViewReader { proxy in
                     ScrollView {
