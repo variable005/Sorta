@@ -12,13 +12,13 @@ public final class EmptyStateViewModel: ObservableObject {
     public init() {}
 
     public func cycleNext(forSearch query: String, category: ClipCategory?) {
-        withAnimation(.spring(response: 0.25, dampingFraction: 0.7)) {
+        withAnimation(.spring(response: 0.22, dampingFraction: 0.75)) {
             diceRotation += 180
-            bounceScale = 0.88
+            bounceScale = 0.92
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.10) { [weak self] in
             guard let self = self else { return }
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.65)) {
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.75)) {
                 self.bounceScale = 1.0
                 if !query.isEmpty {
                     self.currentMessage = FunnyMessagesProvider.searchMessage(for: query)
@@ -34,7 +34,7 @@ public final class EmptyStateViewModel: ObservableObject {
     }
 
     public func updateState(forSearch query: String, category: ClipCategory?) {
-        withAnimation(.easeInOut(duration: 0.18)) {
+        withAnimation(.easeInOut(duration: 0.15)) {
             if !query.isEmpty {
                 self.currentMessage = FunnyMessagesProvider.searchMessage(for: query)
             } else if let cat = category {
@@ -46,7 +46,7 @@ public final class EmptyStateViewModel: ObservableObject {
     }
 }
 
-/// Rich, interactive Liquid Glass Empty State View for Sorta HUD
+/// Sleek, native macOS Liquid Glass Empty State View for Sorta HUD
 public struct EmptyPanelStateView: View {
     @ObservedObject var viewModel: HUDViewModel
     @ObservedObject var watcher: PasteboardWatcher
@@ -59,7 +59,7 @@ public struct EmptyPanelStateView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            // Top Action Bar for Empty State (Sidebar Toggle & Clear)
+            // Top Action Bar for Empty State (Sidebar Toggle & New Joke)
             HStack(spacing: 8) {
                 Button(action: {
                     withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
@@ -79,7 +79,7 @@ public struct EmptyPanelStateView: View {
 
                 Spacer()
 
-                // "New Joke" Quick Button in Header
+                // "New Joke" Button in Header
                 Button(action: {
                     emptyStateVM.cycleNext(forSearch: viewModel.searchQuery, category: viewModel.selectedCategory)
                 }) {
@@ -106,87 +106,48 @@ public struct EmptyPanelStateView: View {
 
             Spacer(minLength: 10)
 
-            // Centered Interactive Liquid Glass Card
-            VStack(spacing: 16) {
-                // Animated Glowing Icon Badge
+            // Centered Clean Glass Card
+            VStack(spacing: 14) {
+                // Subtle Frosted Icon Container
                 ZStack {
-                    // Soft Outer Ambient Glow
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: emptyStateVM.currentMessage.gradientColors.map { $0.opacity(0.35) },
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 72, height: 72)
-                        .blur(radius: 12)
-
-                    // Glass Circle Base
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: emptyStateVM.currentMessage.gradientColors.map { $0.opacity(0.20) },
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 60, height: 60)
+                    RoundedRectangle(cornerRadius: 14)
+                        .fill(Color.white.opacity(0.06))
+                        .frame(width: 50, height: 50)
                         .overlay(
-                            Circle()
-                                .stroke(
-                                    LinearGradient(
-                                        colors: emptyStateVM.currentMessage.gradientColors.map { $0.opacity(0.6) },
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 1.2
-                                )
+                            RoundedRectangle(cornerRadius: 14)
+                                .stroke(Color.white.opacity(0.12), lineWidth: 1)
                         )
 
-                    // SF Symbol Icon
                     Image(systemName: emptyStateVM.currentMessage.icon)
-                        .font(.system(size: 26, weight: .semibold))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.white, emptyStateVM.currentMessage.gradientColors.first ?? .white],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .shadow(color: (emptyStateVM.currentMessage.gradientColors.first ?? .blue).opacity(0.5), radius: 6, x: 0, y: 2)
+                        .font(.system(size: 22, weight: .regular))
+                        .foregroundColor(.primary.opacity(0.85))
                 }
                 .scaleEffect(emptyStateVM.bounceScale)
 
-                // Category / Tag Badge
-                HStack(spacing: 5) {
-                    Circle()
-                        .fill(emptyStateVM.currentMessage.gradientColors.first ?? .blue)
-                        .frame(width: 5, height: 5)
-                    Text(emptyStateVM.currentMessage.badge.uppercased())
-                        .font(.system(size: 9.5, weight: .bold, design: .rounded))
-                        .tracking(0.6)
-                        .foregroundColor(.primary.opacity(0.85))
-                }
-                .padding(.horizontal, 9)
-                .padding(.vertical, 4)
-                .background(Color.white.opacity(0.08))
-                .cornerRadius(12)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.white.opacity(0.14), lineWidth: 0.8)
-                )
+                // Category / Tag Badge (Clean monochrome)
+                Text(emptyStateVM.currentMessage.badge.uppercased())
+                    .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
+                    .tracking(0.8)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Color.white.opacity(0.05))
+                    .cornerRadius(6)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color.white.opacity(0.09), lineWidth: 0.8)
+                    )
 
                 // Headline and Subtext
-                VStack(spacing: 6) {
+                VStack(spacing: 5) {
                     Text(emptyStateVM.currentMessage.headline)
-                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.primary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 20)
 
                     Text(emptyStateVM.currentMessage.subtext)
-                        .font(.system(size: 12.5, weight: .regular))
+                        .font(.system(size: 12, weight: .regular))
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
                         .lineSpacing(3)
@@ -194,7 +155,7 @@ public struct EmptyPanelStateView: View {
                         .padding(.horizontal, 16)
                 }
 
-                // Interactive Buttons & Shortcuts Area
+                // Interactive Action Buttons
                 HStack(spacing: 10) {
                     if !viewModel.searchQuery.isEmpty {
                         Button(action: {
@@ -210,12 +171,12 @@ public struct EmptyPanelStateView: View {
                             }
                             .foregroundColor(.white)
                             .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(Color.white.opacity(0.12))
-                            .cornerRadius(8)
+                            .padding(.vertical, 5)
+                            .background(Color.white.opacity(0.10))
+                            .cornerRadius(7)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.white.opacity(0.25), lineWidth: 1)
+                                RoundedRectangle(cornerRadius: 7)
+                                    .stroke(Color.white.opacity(0.20), lineWidth: 1)
                             )
                         }
                         .buttonStyle(.plain)
@@ -233,57 +194,50 @@ public struct EmptyPanelStateView: View {
                             }
                             .foregroundColor(.white)
                             .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(Color.white.opacity(0.12))
-                            .cornerRadius(8)
+                            .padding(.vertical, 5)
+                            .background(Color.white.opacity(0.10))
+                            .cornerRadius(7)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(Color.white.opacity(0.25), lineWidth: 1)
+                                RoundedRectangle(cornerRadius: 7)
+                                    .stroke(Color.white.opacity(0.20), lineWidth: 1)
                             )
                         }
                         .buttonStyle(.plain)
                     }
 
-                    // Shuffle Joke Pill Button
+                    // "Tell me another" pill
                     Button(action: {
                         emptyStateVM.cycleNext(forSearch: viewModel.searchQuery, category: viewModel.selectedCategory)
                     }) {
                         HStack(spacing: 5) {
                             Image(systemName: "shuffle")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.system(size: 10, weight: .semibold))
                             Text("Tell me another")
                                 .font(.system(size: 11, weight: .medium))
                         }
-                        .foregroundColor(.primary.opacity(0.9))
+                        .foregroundColor(.secondary)
                         .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color.white.opacity(0.08))
-                        .cornerRadius(8)
+                        .padding(.vertical, 5)
+                        .background(Color.white.opacity(0.06))
+                        .cornerRadius(7)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 8)
-                                .stroke(Color.white.opacity(0.15), lineWidth: 0.8)
+                            RoundedRectangle(cornerRadius: 7)
+                                .stroke(Color.white.opacity(0.12), lineWidth: 0.8)
                         )
                     }
                     .buttonStyle(.plain)
                 }
-                .padding(.top, 4)
+                .padding(.top, 2)
             }
-            .padding(.vertical, 24)
+            .padding(.vertical, 20)
             .padding(.horizontal, 20)
             .background(
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.white.opacity(emptyStateVM.isHoveringCard ? 0.05 : 0.02))
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color.white.opacity(emptyStateVM.isHoveringCard ? 0.04 : 0.02))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 16)
+                        RoundedRectangle(cornerRadius: 14)
                             .stroke(
-                                LinearGradient(
-                                    colors: [
-                                        Color.white.opacity(emptyStateVM.isHoveringCard ? 0.20 : 0.08),
-                                        Color.white.opacity(0.02)
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
+                                Color.white.opacity(emptyStateVM.isHoveringCard ? 0.14 : 0.07),
                                 lineWidth: 1
                             )
                     )
@@ -296,34 +250,34 @@ public struct EmptyPanelStateView: View {
             .onTapGesture {
                 emptyStateVM.cycleNext(forSearch: viewModel.searchQuery, category: viewModel.selectedCategory)
             }
-            .help("Click to get another funny message")
+            .help("Click to cycle funny messages")
             .padding(.horizontal, 24)
 
             Spacer(minLength: 10)
 
-            // Bottom Helpful Tip Bar
-            HStack(spacing: 6) {
+            // Bottom Tip Bar
+            HStack(spacing: 5) {
                 Image(systemName: "sparkles")
                     .font(.system(size: 10))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.secondary.opacity(0.8))
 
                 Text("Tip: Press")
                     .font(.system(size: 11))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.secondary.opacity(0.8))
 
                 Text("⌘C")
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
                     .padding(.horizontal, 5)
-                    .padding(.vertical, 2)
-                    .background(Color.white.opacity(0.1))
+                    .padding(.vertical, 1.5)
+                    .background(Color.white.opacity(0.08))
                     .cornerRadius(4)
-                    .foregroundColor(.primary)
+                    .foregroundColor(.primary.opacity(0.85))
 
                 Text("in any app to copy text, links, JSON, or images")
                     .font(.system(size: 11))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.secondary.opacity(0.8))
             }
-            .padding(.bottom, 14)
+            .padding(.bottom, 12)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onAppear {
@@ -338,7 +292,7 @@ public struct EmptyPanelStateView: View {
     }
 }
 
-/// Compact humorous empty state for the Sidebar list
+/// Compact empty state for Sidebar
 public struct CompactEmptyStateView: View {
     @ObservedObject var viewModel: HUDViewModel
     @ObservedObject var watcher: PasteboardWatcher
@@ -350,41 +304,22 @@ public struct CompactEmptyStateView: View {
     }
 
     public var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             Spacer()
 
-            // Mini Glowing Icon
-            ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: emptyStateVM.currentMessage.gradientColors.map { $0.opacity(0.25) },
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 44, height: 44)
+            Image(systemName: emptyStateVM.currentMessage.icon)
+                .font(.system(size: 20, weight: .regular))
+                .foregroundColor(.secondary.opacity(0.7))
 
-                Image(systemName: emptyStateVM.currentMessage.icon)
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.white, emptyStateVM.currentMessage.gradientColors.first ?? .white],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-            }
-
-            VStack(spacing: 4) {
+            VStack(spacing: 3) {
                 Text(emptyStateVM.currentMessage.headline)
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .foregroundColor(.primary)
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .foregroundColor(.primary.opacity(0.9))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 12)
 
                 Text(emptyStateVM.currentMessage.subtext)
-                    .font(.system(size: 10.5))
+                    .font(.system(size: 10))
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
                     .lineLimit(3)
@@ -403,12 +338,16 @@ public struct CompactEmptyStateView: View {
                 }
                 .foregroundColor(.secondary)
                 .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color.white.opacity(0.07))
-                .cornerRadius(6)
+                .padding(.vertical, 3)
+                .background(Color.white.opacity(0.06))
+                .cornerRadius(5)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 5)
+                        .stroke(Color.white.opacity(0.10), lineWidth: 0.8)
+                )
             }
             .buttonStyle(.plain)
-            .padding(.top, 4)
+            .padding(.top, 2)
 
             Spacer()
         }
